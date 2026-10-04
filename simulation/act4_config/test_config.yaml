@@ -1,0 +1,9 @@
+name: antrv
+compiler_exe: riscv-none-elf-gcc # executable name on $PATH or full path to executable
+objdump_exe: riscv-none-elf-objdump # executable name on $PATH or full path to executable, optional
+ref_model_exe: sail_riscv_sim # executable name on $PATH or full path to executable
+udb_config: antrv.yaml
+linker_script: link.ld
+dut_include_dir: . # Directory containing DUT specific rvmodel_macros.h header
+harts: 1
+includ_priv_tests: False

@@ -1,0 +1,117 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/riscv/riscv-unified-db/main/spec/schemas/config_schema.json
+---
+$schema: config_schema.json#
+kind: architecture configuration
+type: fully configured
+name: antrv
+description: The rv32i configuration of antrv
+implemented_extensions:
+  - { name: I, version: "= 2.1" }
+  - { name: Sm, version: "= 1.12.0" }
+params:
+  MXLEN: 32
+  CONFIG_PTR_ADDRESS: 0
+  HPM_COUNTER_EN:
+    [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+    ]
+  MARCHID_IMPLEMENTED: false
+  MCOUNTENABLE_EN:
+    [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+    ]
+  MCOUNTINHIBIT_IMPLEMENTED: false
+  MIMPID_IMPLEMENTED: false
+  MISALIGNED_LDST: false
+  MISALIGNED_LDST_EXCEPTION_PRIORITY:
+  MISA_CSR_IMPLEMENTED:
+  MTVAL_WIDTH:
+  MTVEC_ACCESS:
+  MTVEC_ILLEGAL_WRITE_BEHAVIOR:
+  MTVEC_MODES:
+  M_MODE_ENDIANNESS:
+  NON_STANDARD_EXTENSION_IMPLEMENTED:
+  NUM_PMP_ENTRIES:
+  PHYS_ADDR_WIDTH:
+  PMA_GRANULARITY:
+  PRECISE_SYNCHRONOUS_EXCEPTIONS:
+  REPORT_ENCODING_IN_MTVAL_ON_ILLEGAL_INSTRUCTION:
+  REPORT_VA_IN_MTVAL_ON_BREAKPOINT:
+  REPORT_VA_IN_MTVAL_ON_INSTRUCTION_ACCESS_FAULT:
+  REPORT_VA_IN_MTVAL_ON_INSTRUCTION_MISALIGNED:
+  REPORT_VA_IN_MTVAL_ON_LOAD_ACCESS_FAULT:
+  REPORT_VA_IN_MTVAL_ON_LOAD_MISALIGNED:
+  REPORT_VA_IN_MTVAL_ON_STORE_AMO_ACCESS_FAULT:
+  REPORT_VA_IN_MTVAL_ON_STORE_AMO_MISALIGNED:
+  TRAP_ON_EBREAK:
+  TRAP_ON_ECALL_FROM_M:
+  TRAP_ON_ILLEGAL_WLRL:
+  TRAP_ON_RESERVED_INSTRUCTION:
+  TRAP_ON_UNIMPLEMENTED_CSR:
+  TRAP_ON_UNIMPLEMENTED_INSTRUCTION:
+  VENDOR_ID_BANK:
+  VENDOR_ID_OFFSET:
+  WFI_FINITE:
+  WFI_U_MODE:
