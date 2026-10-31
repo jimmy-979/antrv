@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regression tests</title>
+<style>
+:root { color-scheme: light; --text: #17212b; --background: #f5f7fa; --surface: #fff; --border: #dce2e8; --pass: #137333; --fail: #b3261e; --pending: #875600; --link: #185abc; }
+:root[data-theme="dark"] { color-scheme: dark; --text: #e6e9ef; --background: #282c34; --surface: #21252b; --border: #3e4451; --pass: #98c379; --fail: #e06c75; --pending: #e5c07b; --link: #61afef; }
+body { font: 16px system-ui, sans-serif; max-width: 1100px; margin: 40px auto; padding: 0 20px; color: var(--text); background: var(--background); }
+table { width: 100%; border-collapse: collapse; background: var(--surface); margin: 20px 0; }
+th, td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border); overflow-wrap: anywhere; }
+th:first-child, td:first-child { width: 1%; white-space: nowrap; padding: 8px; }
+th:first-child label { display: inline-flex; align-items: center; gap: 4px; }
+th:first-child input, td:first-child input { margin: 0; }
+.sort { padding: 2px 6px; margin: 0 0 0 6px; font-size: 12px; vertical-align: middle; }
+.sort[aria-pressed="true"] { color: var(--link); border-color: var(--link); }
+button, input { margin: 5px; }
+button { padding: 8px 14px; cursor: pointer; border: 1px solid var(--border); border-radius: 6px; }
+button, input, textarea { color: var(--text); background: var(--surface); }
+a { color: var(--link); }
+button[data-status][aria-pressed="true"] { border-color: var(--link); outline: 1px solid var(--link); }
+.pass { color: var(--pass); font-weight: bold; }
+.fail, .error { color: var(--fail); font-weight: bold; }
+.not-run, .skip { color: var(--pending); }
+.running { color: var(--link); font-weight: bold; }
+textarea { width: 100%; box-sizing: border-box; padding: 12px; min-height: 100px; }
+#summary-layout { display: flex; align-items: center; gap: 24px; margin: 20px 0; }
+#status-controls { flex: 1; min-width: 0; }
+#summary { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+#summary span { padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-weight: bold; }
+#runtime { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; padding: 18px 24px; border: 1px solid var(--border); border-left: 4px solid var(--link); border-radius: 24px; background: var(--surface); }
+#runtime span { font-size: 13px; }
+#runtime strong { font-size: 24px; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { #summary-layout { flex-direction: column; align-items: stretch; gap: 16px; } #runtime { align-self: flex-end; } }
+#feedback { min-height: 24px; }
+#theme { position: absolute; top: 12px; right: 12px; width: 64px; height: 32px; padding: 3px; margin: 0; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; }
+#theme svg { width: 18px; height: 18px; position: relative; z-index: 1; pointer-events: none; }
+#theme::before { content: ""; position: absolute; width: 26px; height: 26px; left: 2px; top: 2px; border-radius: 50%; background: var(--border); transition: transform 160ms ease; }
+#theme[aria-checked="true"]::before { transform: translateX(32px); }
+@media (prefers-reduced-motion: reduce) { #theme::before { transition: none; } }
+</style>
+</head>
+<body>
+<h1>Regression tests</h1>
+<button id="theme" role="switch" aria-checked="false" aria-label="Dark mode" title="Toggle dark mode">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></svg>
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z"/></svg>
+</button>
+<p>Saved result snapshot. Run <code>make html</code> again to refresh statuses.
+Commands are generated here, not executed by this page. Activate your Python environment before running them.</p>
+<p>Time is real test runtime in seconds. The total sums available test runtimes, not parallel regression elapsed time.</p>
+<div id="summary-layout">
+<div id="status-controls">
+<div id="summary" aria-label="Test status counts"></div>
+<div aria-label="Filter tests by status">
+<button data-status="" aria-pressed="true">Show all</button>
+<button data-status="PASS" aria-pressed="false">Show passed</button>
+<button data-status="FAIL" aria-pressed="false">Show failed</button>
+<button data-status="RUNNING" aria-pressed="false">Show running</button>
+<button data-status="NOT RUN" aria-pressed="false">Show not run</button>
+<button data-status="SKIP" aria-pressed="false">Show skipped</button>
+<button data-status="ERROR" aria-pressed="false">Show errors</button>
+</div>
+</div>
+<div id="runtime" aria-label="Total real test runtime"><span>Total real time</span><strong><!-- TOTAL_TIME --></strong></div>
+</div>
+<table>
+<thead><tr>
+<th><label><input id="select-visible" type="checkbox" aria-label="Select all tests">Select</label></th>
+<th aria-sort="none">Test<button class="sort" data-sort="test" aria-label="Sort Test ascending" title="Sort Test ascending" aria-pressed="false">&#8597;</button></th>
+<th aria-sort="none">Status<button class="sort" data-sort="status" aria-label="Sort Status ascending" title="Sort Status ascending" aria-pressed="false">&#8597;</button></th>
+<th aria-sort="none">Time<button class="sort" data-sort="time" aria-label="Sort Time ascending" title="Sort Time ascending" aria-pressed="false">&#8597;</button></th>
+<th>Output</th>
+</tr></thead>
+<tbody>
+<!-- TEST_ROWS -->
+</tbody>
+</table>
+<label>Parallel jobs <input id="jobs" type="number" min="1" step="1" value="4"></label>
+<label><input id="rerun" type="checkbox">Force rerun (ignore saved results)</label>
+<h2>Run selected tests</h2>
+<p id="count"></p>
+<textarea id="command" readonly aria-label="Generated command"></textarea>
+<button id="copy" disabled>Copy command</button>
+<p id="feedback" role="status"></p>
+<script>
+const base = /* COMMAND_BASE */;
+const tests = [...document.querySelectorAll(".test")];
+const jobs = document.querySelector("#jobs");
+const rerun = document.querySelector("#rerun");
+const command = document.querySelector("#command");
+const copy = document.querySelector("#copy");
+const feedback = document.querySelector("#feedback");
+const selectVisible = document.querySelector("#select-visible");
+let statusFilter = "";
+const statuses = new Map(tests.map(test => [
+    test, test.closest("tr").querySelector("td:nth-child(3)").textContent.trim()
+]));
+let sortColumn = "";
+let sortAscending = true;
+for (const button of document.querySelectorAll("[data-sort]")) {
+    button.onclick = () => {
+        sortAscending = sortColumn === button.dataset.sort ? !sortAscending : true;
+        sortColumn = button.dataset.sort;
+        const sorted = [...tests].sort((a, b) => {
+            let comparison;
+            if (sortColumn === "time") {
+                const aTime = Number.parseFloat(a.closest("tr").cells[3].textContent);
+                const bTime = Number.parseFloat(b.closest("tr").cells[3].textContent);
+                if (Number.isNaN(aTime) || Number.isNaN(bTime)) {
+                    return Number(Number.isNaN(aTime)) - Number(Number.isNaN(bTime));
+                }
+                comparison = aTime - bTime;
+            } else {
+                const aValue = sortColumn === "status" ? statuses.get(a) : a.value;
+                const bValue = sortColumn === "status" ? statuses.get(b) : b.value;
+                comparison = aValue.localeCompare(bValue);
+            }
+            return sortAscending ? comparison : -comparison;
+        });
+        const body = document.querySelector("tbody");
+        sorted.forEach(test => body.append(test.closest("tr")));
+        document.querySelectorAll("[data-sort]").forEach(control => {
+            const active = control === button;
+            control.closest("th").setAttribute("aria-sort", active ? (sortAscending ? "ascending" : "descending") : "none");
+            control.setAttribute("aria-pressed", String(active));
+            control.textContent = active ? (sortAscending ? "\u2191" : "\u2193") : "\u2195";
+            const nextDirection = active && sortAscending ? "descending" : "ascending";
+            const label = `Sort ${control.dataset.sort === "test" ? "Test" : control.dataset.sort === "status" ? "Status" : "Time"} ${nextDirection}`;
+            control.setAttribute("aria-label", label);
+            control.title = label;
+        });
+    };
+}
+const labels = {PASS: "Passed", FAIL: "Failed", RUNNING: "Running", "NOT RUN": "Not run", SKIP: "Skipped", ERROR: "Errors"};
+const summary = document.querySelector("#summary");
+for (const [status, label] of Object.entries(labels)) {
+    const count = tests.filter(test => statuses.get(test) === status).length;
+    const item = document.createElement("span");
+    item.className = status.toLowerCase().replace(" ", "-");
+    item.textContent = `${label}: ${count} / ${tests.length}`;
+    summary.append(item);
+}
+const theme = document.querySelector("#theme");
+function setTheme(dark) {
+    document.documentElement.dataset.theme = dark ? "dark" : "light";
+    theme.setAttribute("aria-checked", String(dark));
+}
+setTheme(matchMedia("(prefers-color-scheme: dark)").matches);
+theme.onclick = () => setTheme(document.documentElement.dataset.theme !== "dark");
+function update() {
+    const selected = tests.filter(test => test.checked);
+    tests.forEach(test => {
+        test.closest("tr").hidden = statusFilter !== "" && statuses.get(test) !== statusFilter;
+    });
+    selectVisible.checked = tests.length > 0 && selected.length === tests.length;
+    selectVisible.indeterminate = selected.length > 0 && selected.length < tests.length;
+    selectVisible.disabled = tests.length === 0;
+    document.querySelector("#count").textContent = `${selected.length} of ${tests.length} tests selected`;
+    const valid = jobs.validity.valid && Number.isInteger(Number(jobs.value)) && Number(jobs.value) > 0;
+    command.value = selected.length && valid
+        ? `${base} -j${jobs.value}${rerun.checked ? " RERUN=1" : ""} ${selected.map(test => test.value).join(" ")}`
+        : "";
+    copy.disabled = !command.value;
+    feedback.textContent = valid ? "" : "Enter a positive integer for parallel jobs.";
+}
+selectVisible.onchange = () => {
+    tests.forEach(test => test.checked = selectVisible.checked);
+    update();
+};
+for (const button of document.querySelectorAll("[data-status]")) {
+    button.onclick = () => {
+        statusFilter = button.dataset.status;
+        document.querySelectorAll("[data-status]").forEach(filter => {
+            filter.setAttribute("aria-pressed", String(filter === button));
+        });
+        update();
+    };
+}
+for (const input of [...tests, jobs, rerun]) {
+    input.addEventListener("input", update);
+}
+copy.onclick = async () => {
+    try {
+        await navigator.clipboard.writeText(command.value);
+        feedback.textContent = "Command copied.";
+    } catch (error) {
+        command.focus();
+        command.select();
+        feedback.textContent = "Clipboard unavailable. The command is selected; copy it manually.";
+    }
+};
+update();
+</script>
+</body>
+</html>

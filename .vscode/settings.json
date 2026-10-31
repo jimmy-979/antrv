@@ -1,15 +1,21 @@
 {
-    // Format on save for all files
-    "editor.formatOnSave": true,
-    // Python settings
-    "[python]": {
-        "editor.defaultFormatter": "charliermarsh.ruff",
-        "editor.codeActionsOnSave": {
-            "source.organizeImports": "explicit"
-        },
-    },
-    // Verilog settings
-    "verilog.formatting.veribleVerilogFormatter.path": "verible-verilog-format",
-    "verilog.linting.linter": "verilator",
-    "verilog.linting.verilator.runAtFileLocation": false,
+  // Format on save for all files
+  "editor.formatOnSave": true,
+  // Python settings
+  "[python]": {
+    "editor.defaultFormatter": "charliermarsh.ruff",
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit",
+      "source.fixAll.ruff": "explicit"
+    }
+  },
+  // Verilog settings
+  "verilog.formatting.veribleVerilogFormatter.path": "verible-verilog-format",
+  "verilog.linting.linter": "verible-verilog-lint",
+  "verilog.linting.veribleVerilogLint.runAtFileLocation": false,
+  // Exclude files
+  "files.exclude": {
+    "**/.git": true,
+    "**/__pycache__": true
+  }
 }

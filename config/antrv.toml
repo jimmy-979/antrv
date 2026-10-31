@@ -1,0 +1,9 @@
+top = "antrv_top"
+sources = [
+    "rtl/antrv_pkg.sv",
+    "rtl/antrv_mem.sv",
+    "rtl/antrv_regfile.sv",
+    "rtl/antrv_alu.sv",
+    "rtl/antrv_cpu.sv",
+    "rtl/antrv_top.sv",
+]

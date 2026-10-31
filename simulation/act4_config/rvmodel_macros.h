@@ -98,6 +98,7 @@
 ##### Interrupt Latency #####
 
 //#define RVMODEL_INTERRUPT_LATENCY 10
+#define RVMODEL_INTERRUPT_LATENCY
 
 ##### Machine Timer #####
 
@@ -107,6 +108,7 @@
 // with caches.  With a delay of 100 the timer interrupt fires while still in
 // M-mode with MIE=1, so the trap records MPP=M instead of MPP=U/S.
 //#define RVMODEL_TIMER_INT_SOON_DELAY 10000
+#define RVMODEL_TIMER_INT_SOON_DELAY
 
 //#define RVMODEL_MTIME_ADDRESS  0x0200BFF8  /* Address of mtime CSR */
 

@@ -1,6 +1,6 @@
 module antrv_regfile #(
-    parameter ADDR_WIDTH = 5,
-    parameter DATA_WIDTH = 32
+    parameter int ADDR_WIDTH = 5,
+    parameter int DATA_WIDTH = 32
 ) (
     input  logic                  wclk_i,
     input  logic                  rclk_i,
@@ -11,7 +11,7 @@ module antrv_regfile #(
     output logic [DATA_WIDTH-1:0] rdata_o
 );
 
-  logic [DATA_WIDTH-1:0] mem[(1<<ADDR_WIDTH)-1:0];
+  logic [DATA_WIDTH-1:0] mem[1<<ADDR_WIDTH];
 
   always_ff @(posedge wclk_i) begin
     if (we_i && waddr_i != 0) begin
