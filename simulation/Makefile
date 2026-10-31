@@ -5,6 +5,7 @@
 # Completed results are reused; pass RERUN=1 to force fresh simulations.
 # Use 'make html' to create a selectable status report in $(SIM_BUILD)/regression.html.
 # 'all' and 'sim' display live completion counts and elapsed time.
+# Multiple test targets show summaries; single tests also stream their full logs.
 PYTHON ?= python
 VERILATOR ?= verilator
 COCOTB_TEST_MODULES ?= antrv_top_test
@@ -13,7 +14,12 @@ EXTRA_ARGS ?= -Wall --trace --trace-fst --trace-structs
 SIM_BUILD ?= build
 DESIGN ?= ../config/antrv.toml
 PARSER ?= ../python/parse_design.py
-export PYTHON COCOTB_TEST_MODULES WAVES EXTRA_ARGS SIM_BUILD DESIGN PARSER
+REG_BLOCK_FILES = ../hal/build/regblock/gpio_reg_file.sv ../hal/build/regblock/gpio_reg_file_pkg.sv ../hal/build/regblock/verilator.vlt
+COMPILE_ARGS += $(abspath ../hal/build/regblock/verilator.vlt)
+export PYTHON COCOTB_TEST_MODULES WAVES EXTRA_ARGS SIM_BUILD DESIGN PARSER COMPILE_ARGS
+ifneq ($(word 2,$(filter test-%,$(MAKECMDGOALS))),)
+export LOG_TEST_OUTPUT ?= 1
+endif
 
 TEST_FILE ?= $(COCOTB_TEST_MODULES).py
 GENERATED_MAKEFILE ?= build/regression.mk
@@ -40,7 +46,10 @@ help:
 		'  SIM_BUILD=path   Set the simulation build directory.' \
 		'  DESIGN=path      Set the design TOML configuration.'
 
-generate: $(GENERATED_MAKEFILE)
+generate: $(GENERATED_MAKEFILE) $(REG_BLOCK_FILES)
+
+$(REG_BLOCK_FILES) &: ../hal/gpio.rdl ../hal/Makefile
+	+$(MAKE) -C ../hal verilog
 
 # Regenerate when the generator or test module changes.
 $(GENERATED_MAKEFILE): ../python/list_tests.py $(TEST_FILE)
@@ -71,8 +80,9 @@ test-%: generate
 
 sim: all
 
-lint:
+lint: $(REG_BLOCK_FILES)
 	@$(VERILATOR) --lint-only -Wall \
+		$(COMPILE_ARGS) \
 		--top-module "$$($(PYTHON) "$(PARSER)" "$(DESIGN)" --field top)" \
 		$$($(PYTHON) "$(PARSER)" "$(DESIGN)" --field sources --root ..)
 

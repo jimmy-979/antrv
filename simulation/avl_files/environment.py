@@ -14,15 +14,19 @@ class environment(avl.Env):
     def __init__(self, name: str, parent: avl.Component) -> None:
         super().__init__(name, parent)
 
+        # Get variables
+        self.disable_scoreboard = avl.Factory.get_variable(
+            f"{self.get_full_name}.disable_scoreboard", False
+        )
+        self.elf = avl.Factory.get_variable(f"{self.get_full_name}.elf")
+
         # Create env components
         self.cfg = env_config("cfg", self)
         self.elf_loader = elf_loader("elf_loader", self)
         self.sail_ref = sail_reference("sail_ref", self)
         self.mon = antrv_monitor("mon", self)
-        self.scb = scoreboard("scb", self)
-
-        # Get variables
-        self.elf = avl.Factory.get_variable(f"{self.get_full_name}.elf")
+        if not self.disable_scoreboard:
+            self.scb = scoreboard("scb", self)
 
         # Config env components
         self.elf_loader.memories_map = self.cfg.memory_map
@@ -32,8 +36,9 @@ class environment(avl.Env):
         self.mon.cfg = self.cfg
 
         # Connect env components
-        self.sail_ref.item_export.connect(self.scb.before_port)
-        self.mon.item_export.connect(self.scb.after_port)
+        if not self.disable_scoreboard:
+            self.sail_ref.item_export.connect(self.scb.before_port)
+            self.mon.item_export.connect(self.scb.after_port)
 
     async def run_phase(self):
         # Setup clock, timeout

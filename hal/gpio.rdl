@@ -1,0 +1,30 @@
+addrmap gpio_reg_file #(
+    longint unsigned GPIO_WIDTH = 4
+) {
+    reg {
+        name = "GPIO Input Data";
+        field {
+            sw = r;
+            hw = w;
+            reset = 0;
+        } pin[GPIO_WIDTH-1:0];
+    } data_in;
+
+    reg {
+        name = "GPIO Output Data";
+        field {
+            sw = rw;
+            hw = r;
+            reset = 0;
+        } pin[GPIO_WIDTH-1:0];
+    } data_out;
+
+    reg {
+        name = "GPIO Direction";
+        field {
+            sw = rw;
+            hw = r;
+            reset = 0;
+        } pin[GPIO_WIDTH-1:0];
+    } direction;
+};

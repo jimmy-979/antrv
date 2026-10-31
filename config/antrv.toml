@@ -1,9 +1,11 @@
 top = "antrv_top"
+dependencies = ["gpio.toml"]
 sources = [
-    "rtl/antrv_pkg.sv",
-    "rtl/antrv_mem.sv",
-    "rtl/antrv_regfile.sv",
-    "rtl/antrv_alu.sv",
-    "rtl/antrv_cpu.sv",
-    "rtl/antrv_top.sv",
+    "rtl/antrv/antrv_pkg.sv",
+    "rtl/antrv/antrv_mem.sv",
+    "rtl/antrv/antrv_regfile.sv",
+    "rtl/antrv/antrv_alu.sv",
+    "rtl/antrv/antrv_cpu.sv",
+    "rtl/antrv/antrv_apb3_bridge.sv",
+    "rtl/antrv/antrv_top.sv",
 ]

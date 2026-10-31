@@ -220,7 +220,7 @@ def write_makefile(test_file: Path, names: list[str], output: Path) -> None:
         "include $(shell cocotb-config --makefiles)/Makefile.sim",
         "else",
         ".DEFAULT_GOAL := all",
-        "LOG_TEST_OUTPUT ?= 0",
+        "LOG_TEST_OUTPUT ?= $(if $(word 2,$(filter test-%,$(MAKECMDGOALS))),1,0)",
         "RERUN ?= 0",
         "all: export LOG_TEST_OUTPUT = 1",
         "",
@@ -288,7 +288,8 @@ def write_makefile(test_file: Path, names: list[str], output: Path) -> None:
                 '\tif [ "$(LOG_TEST_OUTPUT)" = 1 ]; then '
                 f"printf '\\033[36mRUN\\033[0m %s\\n' {quote(name)}; fi; \\",
                 f'\t{{ {command}; result=$$?; printf "%s\\n" "$$result" > "{exit_code_file}"; }} '
-                f'2>&1 | tee "{log_file}"; \\',
+                '2>&1 | { if [ "$(LOG_TEST_OUTPUT)" = 1 ]; then '
+                f'tee "{log_file}" > /dev/null; else tee "{log_file}"; fi; }}; \\',
                 "\ttee_result=$$?; \\",
                 f'\tif [ ! -f "{exit_code_file}" ]; then \\',
                 (

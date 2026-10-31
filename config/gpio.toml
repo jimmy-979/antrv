@@ -1,0 +1,7 @@
+top = "gpio_top"
+sources = [
+    "rtl/common/apb3_intf.sv",
+    "hal/build/regblock/gpio_reg_file_pkg.sv",
+    "hal/build/regblock/gpio_reg_file.sv",
+    "rtl/gpio/gpio_top.sv",
+]

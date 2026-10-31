@@ -1,6 +1,5 @@
 module antrv_cpu #(
     parameter int IMEM_ADDR_WIDTH = 9,
-    parameter int DMEM_ADDR_WIDTH = 9,
     parameter int XLEN            = 32
 ) (
     input  logic                       clk_i,
@@ -9,9 +8,11 @@ module antrv_cpu #(
     input  logic [               31:0] imem_data_i,
     output logic                       dmem_we_o,
     output logic [                3:0] dmem_wmask_o,
-    output logic [DMEM_ADDR_WIDTH-1:0] dmem_addr_o,
+    output logic [               31:0] dmem_addr_o,
     output logic [               31:0] dmem_wdata_o,
-    input  logic [               31:0] dmem_rdata_i
+    input  logic [               31:0] dmem_rdata_i,
+    output logic                       dmem_req_o,
+    input  logic                       dmem_ready_i
 );
 
   logic [XLEN-1:0] pc;
@@ -78,6 +79,8 @@ module antrv_cpu #(
   antrv_pkg::alu_op_t       alu_operation;
   logic                     alu_result_valid;
   logic                     rf_we;
+  logic                     memory_pending;
+  logic [31:0]              memory_addr;
 
   // ---------------------------- PC generation ---------------------------- //
   always_ff @(posedge clk_i or negedge rst_n_i) begin
@@ -103,17 +106,29 @@ module antrv_cpu #(
   // ---------------------- Instruction / Data buses ----------------------- //
   assign imem_addr_o = {2'b00, pc[IMEM_ADDR_WIDTH-1:2]};
 
-  assign dmem_we_o   = opcode == STORE && state == ALU && alu_result_valid;
-  assign dmem_addr_o = {2'b00, alu_result[DMEM_ADDR_WIDTH-1:2]};
+  assign dmem_req_o = state == ALU && (opcode == LOAD || opcode == STORE) &&
+                      (alu_result_valid || memory_pending) && !dmem_rdata_valid;
+  assign dmem_we_o = opcode == STORE && dmem_req_o;
+  assign dmem_addr_o = memory_pending ? memory_addr : alu_result;
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      memory_pending <= 1'b0;
+      memory_addr <= '0;
+    end else if (dmem_req_o) begin
+      memory_pending <= !dmem_ready_i;
+      if (!memory_pending) memory_addr <= alu_result;
+    end
+  end
 
   always_comb begin
     case (funct3)
       3'b000: begin
-        dmem_wmask_o = 4'b0001 << alu_result[1:0];
+        dmem_wmask_o = 4'b0001 << dmem_addr_o[1:0];
         dmem_wdata_o = {4{latched_rf_rdata[7:0]}};
       end
       3'b001: begin
-        dmem_wmask_o = alu_result[1] ? 4'b1100 : 4'b0011;
+        dmem_wmask_o = dmem_addr_o[1] ? 4'b1100 : 4'b0011;
         dmem_wdata_o = {2{latched_rf_rdata[15:0]}};
       end
       default: begin
@@ -431,8 +446,15 @@ module antrv_cpu #(
             alu_input_ready <= 1'b1;
           end
 
-          if (alu_result_valid) begin
+          if (memory_pending) begin
+            alu_input_ready <= 1'b0;
+          end
+
+          if (dmem_req_o && dmem_ready_i) begin
             dmem_rdata_valid <= 1'b1;
+            alu_input_ready <= 1'b0;
+          end else if (alu_result_valid) begin
+            dmem_rdata_valid <= opcode != LOAD && opcode != STORE;
             // Prevent zero-distance shifts from completing again after reset.
             alu_input_ready  <= 1'b0;
           end
