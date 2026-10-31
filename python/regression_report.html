@@ -29,9 +29,10 @@ textarea { width: 100%; box-sizing: border-box; padding: 12px; min-height: 100px
 #status-controls { flex: 1; min-width: 0; }
 #summary { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
 #summary span { padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-weight: bold; }
-#runtime { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; padding: 18px 24px; border: 1px solid var(--border); border-left: 4px solid var(--link); border-radius: 24px; background: var(--surface); }
-#runtime span { font-size: 13px; }
-#runtime strong { font-size: 24px; font-variant-numeric: tabular-nums; }
+#runtime { display: flex; flex-direction: column; gap: 12px; flex-shrink: 0; padding: 18px 24px; border: 1px solid var(--border); border-left: 4px solid var(--link); border-radius: 24px; background: var(--surface); }
+.runtime-value { display: flex; flex-direction: column; gap: 4px; }
+.runtime-value span { font-size: 13px; }
+.runtime-value strong { font-size: 24px; font-variant-numeric: tabular-nums; }
 @media (max-width: 600px) { #summary-layout { flex-direction: column; align-items: stretch; gap: 16px; } #runtime { align-self: flex-end; } }
 #feedback { min-height: 24px; }
 #theme { position: absolute; top: 12px; right: 12px; width: 64px; height: 32px; padding: 3px; margin: 0; border-radius: 20px; display: flex; align-items: center; justify-content: space-between; }
@@ -47,9 +48,6 @@ textarea { width: 100%; box-sizing: border-box; padding: 12px; min-height: 100px
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 1v3m0 16v3M1 12h3m16 0h3M4 4l2 2m12 12 2 2M4 20l2-2M18 6l2-2"/></svg>
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 15.5A9 9 0 0 1 8.5 4 9 9 0 1 0 20 15.5Z"/></svg>
 </button>
-<p>Saved result snapshot. Run <code>make html</code> again to refresh statuses.
-Commands are generated here, not executed by this page. Activate your Python environment before running them.</p>
-<p>Time is real test runtime in seconds. The total sums available test runtimes, not parallel regression elapsed time.</p>
 <div id="summary-layout">
 <div id="status-controls">
 <div id="summary" aria-label="Test status counts"></div>
@@ -63,14 +61,18 @@ Commands are generated here, not executed by this page. Activate your Python env
 <button data-status="ERROR" aria-pressed="false">Show errors</button>
 </div>
 </div>
-<div id="runtime" aria-label="Total real test runtime"><span>Total real time</span><strong><!-- TOTAL_TIME --></strong></div>
+<div id="runtime" aria-label="Total test times">
+<div class="runtime-value"><span>Total real time</span><strong><!-- TOTAL_TIME --></strong></div>
+<div class="runtime-value"><span>Total simulation time</span><strong><!-- TOTAL_SIM_TIME --></strong></div>
+</div>
 </div>
 <table>
 <thead><tr>
 <th><label><input id="select-visible" type="checkbox" aria-label="Select all tests">Select</label></th>
 <th aria-sort="none">Test<button class="sort" data-sort="test" aria-label="Sort Test ascending" title="Sort Test ascending" aria-pressed="false">&#8597;</button></th>
 <th aria-sort="none">Status<button class="sort" data-sort="status" aria-label="Sort Status ascending" title="Sort Status ascending" aria-pressed="false">&#8597;</button></th>
-<th aria-sort="none">Time<button class="sort" data-sort="time" aria-label="Sort Time ascending" title="Sort Time ascending" aria-pressed="false">&#8597;</button></th>
+<th aria-sort="none">Real time<button class="sort" data-sort="time" aria-label="Sort Real time ascending" title="Sort Real time ascending" aria-pressed="false">&#8597;</button></th>
+<th aria-sort="none">Simulation time<button class="sort" data-sort="simulation-time" aria-label="Sort Simulation time ascending" title="Sort Simulation time ascending" aria-pressed="false">&#8597;</button></th>
 <th>Output</th>
 </tr></thead>
 <tbody>
@@ -105,9 +107,10 @@ for (const button of document.querySelectorAll("[data-sort]")) {
         sortColumn = button.dataset.sort;
         const sorted = [...tests].sort((a, b) => {
             let comparison;
-            if (sortColumn === "time") {
-                const aTime = Number.parseFloat(a.closest("tr").cells[3].textContent);
-                const bTime = Number.parseFloat(b.closest("tr").cells[3].textContent);
+            if (sortColumn === "time" || sortColumn === "simulation-time") {
+                const cellIndex = sortColumn === "time" ? 3 : 4;
+                const aTime = Number.parseFloat(a.closest("tr").cells[cellIndex].textContent.replaceAll(",", ""));
+                const bTime = Number.parseFloat(b.closest("tr").cells[cellIndex].textContent.replaceAll(",", ""));
                 if (Number.isNaN(aTime) || Number.isNaN(bTime)) {
                     return Number(Number.isNaN(aTime)) - Number(Number.isNaN(bTime));
                 }
@@ -127,7 +130,8 @@ for (const button of document.querySelectorAll("[data-sort]")) {
             control.setAttribute("aria-pressed", String(active));
             control.textContent = active ? (sortAscending ? "\u2191" : "\u2193") : "\u2195";
             const nextDirection = active && sortAscending ? "descending" : "ascending";
-            const label = `Sort ${control.dataset.sort === "test" ? "Test" : control.dataset.sort === "status" ? "Status" : "Time"} ${nextDirection}`;
+            const column = {"test": "Test", "status": "Status", "time": "Real time", "simulation-time": "Simulation time"}[control.dataset.sort];
+            const label = `Sort ${column} ${nextDirection}`;
             control.setAttribute("aria-label", label);
             control.title = label;
         });

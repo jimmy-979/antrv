@@ -88,6 +88,36 @@ def get_log_duration(log_file: Path, test_name: str) -> float | None:
     return duration
 
 
+def get_log_simulation_time(log_file: Path, test_name: str) -> float | None:
+    if not log_file.is_file():
+        return None
+    log = re.sub(r"\x1b\[[0-9;]*m", "", log_file.read_text(errors="replace"))
+    number = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
+    row = re.compile(
+        rf"\*\*\s+{re.escape(test_name)}\s+(?:PASS|FAIL|SKIP)\s+({number})"
+        rf"\s+{number}\s+{number}\s+\*\*"
+    )
+    durations = [float(match.group(1)) for match in row.finditer(log)]
+    if not durations:
+        return None
+    duration = durations[-1]
+    if not math.isfinite(duration) or duration < 0:
+        raise ValueError(f"Invalid simulation time for {test_name} in {log_file}")
+    return duration
+
+
+def format_simulation_time(nanoseconds: float) -> str:
+    for scale, unit in (
+        (1_000_000_000, "s"),
+        (1_000_000, "ms"),
+        (1_000, "us"),
+        (1, "ns"),
+    ):
+        if nanoseconds >= scale:
+            return f"{nanoseconds / scale:,.3f} {unit}"
+    return f"{nanoseconds:.3f} ns"
+
+
 def print_status(result_file: Path, test_name: str, cached: bool = False) -> str:
     label = get_status(result_file, test_name, check_running=not cached)
     color = {"FAIL": 31, "PASS": 32, "SKIP": 33, "NOT RUN": 33, "RUNNING": 36}[label]
@@ -101,20 +131,30 @@ def write_report(
 ) -> None:
     rows = []
     durations = []
+    simulation_times = []
     for target, name in tests:
         directory = build_root / target
         detail = ""
+        simulation_time = None
         try:
             status, duration = get_test_result(directory / "results.xml", name)
             log_duration = get_log_duration(directory / "simulation.log", name)
             if log_duration is not None:
                 duration = log_duration
+            simulation_time = get_log_simulation_time(
+                directory / "simulation.log", name
+            )
         except (OSError, ElementTree.ParseError, ValueError) as exc:
             status, duration, detail = "ERROR", None, str(exc)
             print(f"Error reading {name}: {exc}", file=sys.stderr)
         duration_cell = f"{duration:.3f} s" if duration is not None else "-"
+        simulation_time_cell = (
+            f"{simulation_time:,.3f} ns" if simulation_time is not None else "-"
+        )
         if duration is not None:
             durations.append(duration)
+        if simulation_time is not None:
+            simulation_times.append(simulation_time)
         log = directory / "simulation.log"
         link = (
             f'<a href="{html.escape(log.resolve().as_uri(), quote=True)}">Log</a>'
@@ -129,6 +169,7 @@ def write_report(
             f'<td class="{status.lower().replace(" ", "-")}" '
             f'title="{html.escape(detail, quote=True)}">{status}</td>'
             f"<td>{duration_cell}</td>"
+            f"<td>{simulation_time_cell}</td>"
             f"<td>{link}</td></tr>"
         )
     template = Path(__file__).with_name("regression_report.html").read_text()
@@ -145,6 +186,12 @@ def write_report(
     page = template.replace("<!-- TEST_ROWS -->", "\n".join(rows))
     total_time = f"{math.fsum(durations):.3f} s" if durations else "-"
     page = page.replace("<!-- TOTAL_TIME -->", total_time)
+    total_simulation_time = (
+        format_simulation_time(math.fsum(simulation_times))
+        if simulation_times
+        else "-"
+    )
+    page = page.replace("<!-- TOTAL_SIM_TIME -->", total_simulation_time)
     page = page.replace(
         "/* COMMAND_BASE */", json.dumps(command).replace("<", "\\u003c")
     )
@@ -199,53 +246,81 @@ def write_makefile(test_file: Path, names: list[str], output: Path) -> None:
             for target, name in zip(targets, names)
         ),
     ]
+    simulator_dir = '"$(abspath $(SIM_BUILD))/simulator"'
+    build_lock = '"$(abspath $(SIM_BUILD))/regression-build.lock"'
     for target, name in zip(targets, names):
         test_filter = quote(f"^{re.escape(name)}$")
-        build_dir = f"$(abspath $(SIM_BUILD))/{target}"
-        command = (
-            f"COCOTB_TEST_FILTER={test_filter} "
+        test_dir = f"$(abspath $(SIM_BUILD))/{target}"
+        log_file = f"{test_dir}/simulation.log"
+        exit_code_file = f"{test_dir}/exit_code"
+        build_command = (
             f"$(MAKE) --no-print-directory -C {quote(str(test_file.parent))} "
             f"-f {quote(str(output))} REGRESSION_SIM=1 "
-            f'SIM_BUILD="{build_dir}" '
-            f'COCOTB_RESULTS_FILE="{build_dir}/results.xml" '
-            f'SIM_ARGS="$(SIM_ARGS) --trace-file {build_dir}/dump.fst" sim'
+            f"SIM_BUILD={simulator_dir} "
+            f'"$(abspath $(SIM_BUILD))/simulator/Vtop"'
         )
+        command = (
+            f"env COCOTB_ANSI_OUTPUT=1 COCOTB_TEST_FILTER={test_filter} "
+            f"$(MAKE) --no-print-directory -C {quote(str(test_file.parent))} "
+            f"-f {quote(str(output))} REGRESSION_SIM=1 "
+            f"SIM_BUILD={simulator_dir} "
+            f'COCOTB_RESULTS_FILE="{test_dir}/results.xml" '
+            f'SIM_ARGS="$(SIM_ARGS) --trace-file {test_dir}/dump.fst" sim'
+        )
+        command = f"(flock -x {build_lock} {build_command} && {command})"
         lines.extend(
             [
                 "",
                 f"{target}:",
-                f'\t@mkdir -p "{build_dir}"',
-                f'\t+@exec 9>"{build_dir}/running.lock"; \\',
+                f'\t@mkdir -p "{test_dir}" "$(abspath $(SIM_BUILD))/simulator"',
+                f'\t+@exec 9>"{test_dir}/running.lock"; \\',
                 "\tflock -n 9 || { printf '\\033[36m%s\\033[0m\\n' "
                 f"{quote('RUNNING ' + name + ' (already running)')} >&2; exit 1; }}; \\",
-                f'\tif [ "$(RERUN)" != 1 ] && [ -f "{build_dir}/results.xml" ]; then \\',
+                f'\tif [ "$(RERUN)" != 1 ] && [ -f "{test_dir}/results.xml" ]; then \\',
                 (
                     f"\t\t$(PYTHON) {quote(str(Path(__file__).resolve()))} "
-                    f'--status "{build_dir}/results.xml" --test-name {quote(name)} --cached; \\'
+                    f'--status "{test_dir}/results.xml" --test-name {quote(name)} --cached; \\'
                 ),
                 "\t\texit $$?; \\",
                 "\tfi; \\",
-                f'\trm -f "{build_dir}/results.xml"; \\',
-                '\tif [ "$(LOG_TEST_OUTPUT)" = 1 ]; then \\',
-                f"\t\tprintf '\\033[36mRUN\\033[0m %s\\n' {quote(name)}; \\",
-                f'\t\tif {command} > "{build_dir}/simulation.log" 2>&1; then \\',
-                f"\t\t\tprintf '\\033[32mPASS\\033[0m %s\\n' {quote(name)}; \\",
-                "\t\telse \\",
-                "\t\t\tresult=$$?; \\",
+                f'\trm -f "{test_dir}/results.xml"; \\',
+                f'\trm -f "{exit_code_file}"; \\',
+                '\tif [ "$(LOG_TEST_OUTPUT)" = 1 ]; then '
+                f"printf '\\033[36mRUN\\033[0m %s\\n' {quote(name)}; fi; \\",
+                f'\t{{ {command}; result=$$?; printf "%s\\n" "$$result" > "{exit_code_file}"; }} '
+                f'2>&1 | tee "{log_file}"; \\',
+                "\ttee_result=$$?; \\",
+                f'\tif [ ! -f "{exit_code_file}" ]; then \\',
                 (
-                    f"\t\t\tprintf '\\033[31mFAIL\\033[0m %s (log: %s)\\n' "
-                    f'{quote(name)} "{build_dir}/simulation.log"; \\'
+                    "\t\tprintf '\\033[31m%s\\033[0m\\n' "
+                    f"{quote('FAIL ' + name + ' (simulation exited before reporting status)')}; \\"
                 ),
-                "\t\t\texit $$result; \\",
+                "\t\texit 1; \\",
+                "\tfi; \\",
+                f'\tresult=$$(cat "{exit_code_file}"); rm -f "{exit_code_file}"; \\',
+                "\tif [ $$tee_result -ne 0 ]; then \\",
+                (
+                    "\t\tprintf '\\033[31m%s\\033[0m\\n' "
+                    f"{quote('FAIL ' + name + ' (could not write simulation log)')}; \\"
+                ),
+                "\t\texit 1; \\",
+                "\tfi; \\",
+                "\tif [ $$result -eq 0 ]; then \\",
+                '\t\tif [ "$(LOG_TEST_OUTPUT)" = 1 ]; then \\',
+                f"\t\t\tprintf '\\033[32mPASS\\033[0m %s\\n' {quote(name)}; \\",
                 "\t\tfi; \\",
                 "\telse \\",
-                f"\t\t{command}; \\",
+                (
+                    "\t\tprintf '\\033[31mFAIL\\033[0m %s (log: %s)\\n' "
+                    f'{quote(name)} "{log_file}"; \\'
+                ),
+                "\t\texit $$result; \\",
                 "\tfi",
                 "",
                 f"status-{target.removeprefix('test-')}:",
                 (
                     f"\t@$(PYTHON) {quote(str(Path(__file__).resolve()))} "
-                    f'--status "{build_dir}/results.xml" --test-name {quote(name)}'
+                    f'--status "{test_dir}/results.xml" --test-name {quote(name)}'
                 ),
             ]
         )

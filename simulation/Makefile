@@ -1,6 +1,7 @@
 # Usage: make -C simulation [-j N] [help | all | generate | regenerate | list-tests | status | test-<name> | status-<name> | sim | lint | clean]
 # Use -k to continue running other tests after a failure.
 # Regression output is saved in $(SIM_BUILD)/test-<name>/simulation.log.
+# The Verilator executable is compiled once in $(SIM_BUILD)/simulator and shared.
 # Completed results are reused; pass RERUN=1 to force fresh simulations.
 # Use 'make html' to create a selectable status report in $(SIM_BUILD)/regression.html.
 # 'all' and 'sim' display live completion counts and elapsed time.
@@ -8,7 +9,7 @@ PYTHON ?= python
 VERILATOR ?= verilator
 COCOTB_TEST_MODULES ?= antrv_top_test
 WAVES ?= 1
-EXTRA_ARGS ?= --trace --trace-fst --trace-structs
+EXTRA_ARGS ?= -Wall --trace --trace-fst --trace-structs
 SIM_BUILD ?= build
 DESIGN ?= ../config/antrv.toml
 PARSER ?= ../python/parse_design.py
@@ -31,7 +32,7 @@ help:
 		'  status           Show status for all regression tests.' \
 		'  status-<name>    Show status for one regression test.' \
 		'  html             Generate the selectable regression report.' \
-		'  lint             Run Verilator lint with width warnings as errors.' \
+		'  lint             Run Verilator lint.' \
 		'  clean            Remove simulation build and result files.' \
 		'' \
 		'Options:' \
@@ -41,8 +42,8 @@ help:
 
 generate: $(GENERATED_MAKEFILE)
 
-# Reuse the generated file until explicitly regenerated or removed.
-$(GENERATED_MAKEFILE):
+# Regenerate when the generator or test module changes.
+$(GENERATED_MAKEFILE): ../python/list_tests.py $(TEST_FILE)
 	@$(PYTHON) ../python/list_tests.py "$(TEST_FILE)" --output "$(GENERATED_MAKEFILE)"
 
 regenerate:
@@ -71,8 +72,7 @@ test-%: generate
 sim: all
 
 lint:
-	$(VERILATOR) --lint-only -Wall -Werror-WIDTH -Werror-WIDTHEXPAND \
-		-Werror-WIDTHTRUNC -Werror-WIDTHCONCAT \
+	@$(VERILATOR) --lint-only -Wall \
 		--top-module "$$($(PYTHON) "$(PARSER)" "$(DESIGN)" --field top)" \
 		$$($(PYTHON) "$(PARSER)" "$(DESIGN)" --field sources --root ..)
 
