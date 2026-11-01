@@ -10,11 +10,11 @@ class State(Enum):
     LATCH_RF = 3
 
 
-class antrv_interface(avl.Object):
+class AntrvInterface(avl.Object):
     def __init__(self, name: str, parent: avl.Component) -> None:
         super().__init__(name, parent)
 
-        self.hdl = avl.Factory.get_variable(f"{self.get_full_name}.hdl")
+        self.hdl = avl.Factory.get_variable(f"{self.get_full_name()}.hdl")
 
         self.clk = self.hdl.clk_i
         self.rstn = self.hdl.rst_n_i

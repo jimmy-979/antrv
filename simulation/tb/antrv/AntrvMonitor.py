@@ -1,12 +1,12 @@
 import avl
 import cocotb
-from avl_files.InstructionTransaction import InstructionTransaction
 from cocotb.triggers import FallingEdge, RisingEdge
 from colorama import Fore, Style
-from sim_utils.riscv_disassembler import RiscVDisassembler
+from tb.components.InstructionTransaction import InstructionTransaction
+from tb.utils.RiscVDisassembler import RiscVDisassembler
 
 
-class antrv_monitor(avl.Monitor):
+class AntrvMonitor(avl.Monitor):
     def __init__(self, name: str, parent: avl.Component) -> None:
         super().__init__(name, parent)
 

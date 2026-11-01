@@ -1,16 +1,16 @@
 import avl
-from avl_files.antrv_monitor import antrv_monitor
-from avl_files.elf_loader import elf_loader
-from avl_files.env_config import env_config
-from avl_files.sail_reference import sail_reference
-from avl_files.scoreboard import scoreboard
 from cocotb import start_soon
 from cocotb.triggers import RisingEdge
 from colorama import Fore, Style
-from sim_utils.elf_utils import get_symbol_address, physical_to_local
+from tb.antrv.AntrvEnvCfg import AntrvEnvCfg
+from tb.antrv.AntrvMonitor import AntrvMonitor
+from tb.components.ElfLoader import ElfLoader
+from tb.components.SailReference import SailReference
+from tb.components.Scoreboard import Scoreboard
+from tb.utils.elf_utils import get_symbol_address, physical_to_local
 
 
-class environment(avl.Env):
+class AntrvEnv(avl.Env):
     def __init__(self, name: str, parent: avl.Component) -> None:
         super().__init__(name, parent)
 
@@ -21,12 +21,12 @@ class environment(avl.Env):
         self.elf = avl.Factory.get_variable(f"{self.get_full_name}.elf")
 
         # Create env components
-        self.cfg = env_config("cfg", self)
-        self.elf_loader = elf_loader("elf_loader", self)
-        self.sail_ref = sail_reference("sail_ref", self)
-        self.mon = antrv_monitor("mon", self)
+        self.cfg = AntrvEnvCfg("cfg", self)
+        self.elf_loader = ElfLoader("elf_loader", self)
+        self.sail_ref = SailReference("sail_ref", self)
+        self.mon = AntrvMonitor("mon", self)
         if not self.disable_scoreboard:
-            self.scb = scoreboard("scb", self)
+            self.scb = Scoreboard("scb", self)
 
         # Config env components
         self.elf_loader.memories_map = self.cfg.memory_map

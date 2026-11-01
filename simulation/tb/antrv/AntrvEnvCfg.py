@@ -1,8 +1,8 @@
 import avl
-from avl_files.antrv_interface import antrv_interface
+from tb.antrv.AntrvInterface import AntrvInterface
 
 
-class env_config(avl.Object):
+class AntrvEnvCfg(avl.Object):
     def __init__(self, name: str, parent: avl.Component) -> None:
         super().__init__(name, parent)
 
@@ -16,7 +16,7 @@ class env_config(avl.Object):
         self.timeout_ms = 50
 
         # ---------------------------- Interface ---------------------------- #
-        self.interface = antrv_interface("interface", self)
+        self.interface = AntrvInterface("interface", self)
 
         # --------------------------- Memory map ---------------------------- #
         self.memory_map = {

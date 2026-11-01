@@ -6,6 +6,8 @@
 # Use 'make html' to create a selectable status report in $(SIM_BUILD)/regression.html.
 # 'all' and 'sim' display live completion counts and elapsed time.
 # Multiple test targets show summaries; single tests also stream their full logs.
+# Python support lives in tb/: antrv/ for DUT-specific AVL code,
+# components/ for shared AVL code, and utils/ for simulation helpers.
 PYTHON ?= python
 VERILATOR ?= verilator
 COCOTB_TEST_MODULES ?= antrv_top_test
@@ -52,8 +54,8 @@ help:
 
 generate: $(GENERATED_MAKEFILE) $(HAL_REG_BLOCK_FILES)
 
-# Regenerate when the generator or test module changes.
-$(GENERATED_MAKEFILE): ../python/list_tests.py $(TEST_FILE)
+# Regenerate when the generator, test module, or testbench support changes.
+$(GENERATED_MAKEFILE): ../python/list_tests.py $(TEST_FILE) $(wildcard tb/*.py tb/*/*.py)
 	@$(PYTHON) ../python/list_tests.py "$(TEST_FILE)" --output "$(GENERATED_MAKEFILE)"
 
 regenerate:

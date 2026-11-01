@@ -1,9 +1,9 @@
 import avl
 from colorama import Fore, Style
-from sim_utils.elf_utils import load_memory, parse_elf
+from tb.utils.elf_utils import load_memory, parse_elf
 
 
-class elf_loader(avl.Object):
+class ElfLoader(avl.Object):
     def __init__(self, name, parent):
         super().__init__(name, parent)
 

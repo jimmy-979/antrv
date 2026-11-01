@@ -3,11 +3,11 @@ from pathlib import Path
 
 import avl
 from avl import Port
-from avl_files.InstructionTransaction import InstructionTransaction
-from sim_utils.sail_utils import parse_sail_trace, run_sail
+from tb.components.InstructionTransaction import InstructionTransaction
+from tb.utils.sail_utils import parse_sail_trace, run_sail
 
 
-class sail_reference(avl.Component):
+class SailReference(avl.Component):
     def __init__(self, name, parent):
         super().__init__(name, parent)
 

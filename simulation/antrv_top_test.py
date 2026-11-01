@@ -3,11 +3,11 @@ from pathlib import Path
 
 import avl
 import cocotb
-from avl_files.environment import environment
 from colorama import Fore, Style
-from sim_utils.elf_utils import *
-from sim_utils.sail_utils import *
-from sim_utils.test_utils import *
+from tb.antrv.AntrvEnv import AntrvEnv
+from tb.utils.elf_utils import *
+from tb.utils.sail_utils import *
+from tb.utils.test_utils import *
 
 ELF_DIR = "riscv-arch-test/work/antrv/elfs/rv32i/I"
 CODE_ELF_DIR = Path(__file__).resolve().parent.parent / "code/build"
@@ -42,7 +42,7 @@ async def test_elf(dut, elf):
     root_logger.addHandler(errors)
 
     try:
-        env = environment("env", None)
+        env = AntrvEnv("env", None)
         await env.start()
 
         assert errors.count == 0, (
