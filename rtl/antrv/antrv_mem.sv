@@ -1,6 +1,7 @@
 module antrv_mem #(
-    parameter int ADDR_WIDTH = 9,
-    parameter int DATA_WIDTH = 32
+    parameter int    ADDR_WIDTH = 9,
+    parameter int    DATA_WIDTH = 32,
+    parameter string INIT_FILE  = ""
 ) (
     input  logic                    wclk_i,
     input  logic                    rclk_i,
@@ -13,6 +14,12 @@ module antrv_mem #(
 );
 
   logic [DATA_WIDTH-1:0] mem[1<<ADDR_WIDTH];
+
+  initial begin
+    if (INIT_FILE != "") begin
+      $readmemh(INIT_FILE, mem);
+    end
+  end
 
   always_ff @(posedge wclk_i) begin
     if (we_i) begin

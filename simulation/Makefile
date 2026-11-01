@@ -1,4 +1,4 @@
-# Usage: make -C simulation [-j N] [help | all | generate | regenerate | list-tests | status | test-<name> | status-<name> | sim | lint | clean]
+# Usage: make -C simulation [-j N] [help | all | generate | regenerate | list-tests | status | test-<name> | status-<name> | sim | lint | hal | firmware | clean | cleanall]
 # Use -k to continue running other tests after a failure.
 # Regression output is saved in $(SIM_BUILD)/test-<name>/simulation.log.
 # The Verilator executable is compiled once in $(SIM_BUILD)/simulator and shared.
@@ -14,7 +14,6 @@ EXTRA_ARGS ?= -Wall --trace --trace-fst --trace-structs
 SIM_BUILD ?= build
 DESIGN ?= ../config/antrv.toml
 PARSER ?= ../python/parse_design.py
-REG_BLOCK_FILES = ../hal/build/regblock/gpio_reg_file.sv ../hal/build/regblock/gpio_reg_file_pkg.sv ../hal/build/regblock/verilator.vlt
 COMPILE_ARGS += $(abspath ../hal/build/regblock/verilator.vlt)
 export PYTHON COCOTB_TEST_MODULES WAVES EXTRA_ARGS SIM_BUILD DESIGN PARSER COMPILE_ARGS
 ifneq ($(word 2,$(filter test-%,$(MAKECMDGOALS))),)
@@ -25,6 +24,8 @@ TEST_FILE ?= $(COCOTB_TEST_MODULES).py
 GENERATED_MAKEFILE ?= build/regression.mk
 
 .DEFAULT_GOAL := all
+include ../common.mk
+
 .PHONY: help all generate regenerate list-tests status html sim lint clean
 
 help:
@@ -39,17 +40,17 @@ help:
 		'  status-<name>    Show status for one regression test.' \
 		'  html             Generate the selectable regression report.' \
 		'  lint             Run Verilator lint.' \
+		'  hal              Rebuild HAL register block.' \
+		'  firmware         Build code/build firmware.' \
 		'  clean            Remove simulation build and result files.' \
+		'  cleanall         Also remove code/build and hal/build.' \
 		'' \
 		'Options:' \
 		'  RERUN=1          Rerun tests instead of reusing completed results.' \
 		'  SIM_BUILD=path   Set the simulation build directory.' \
 		'  DESIGN=path      Set the design TOML configuration.'
 
-generate: $(GENERATED_MAKEFILE) $(REG_BLOCK_FILES)
-
-$(REG_BLOCK_FILES) &: ../hal/gpio.rdl ../hal/Makefile
-	+$(MAKE) -C ../hal verilog
+generate: $(GENERATED_MAKEFILE) $(HAL_REG_BLOCK_FILES)
 
 # Regenerate when the generator or test module changes.
 $(GENERATED_MAKEFILE): ../python/list_tests.py $(TEST_FILE)
@@ -80,7 +81,7 @@ test-%: generate
 
 sim: all
 
-lint: $(REG_BLOCK_FILES)
+lint: $(HAL_REG_BLOCK_FILES)
 	@$(VERILATOR) --lint-only -Wall \
 		$(COMPILE_ARGS) \
 		--top-module "$$($(PYTHON) "$(PARSER)" "$(DESIGN)" --field top)" \

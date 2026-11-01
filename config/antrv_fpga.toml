@@ -1,0 +1,3 @@
+top = "antrv_fpga_top"
+dependencies = ["antrv.toml"]
+sources = ["rtl/antrv_fpga/antrv_fpga_top.sv"]

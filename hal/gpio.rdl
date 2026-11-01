@@ -1,5 +1,5 @@
 addrmap gpio_reg_file #(
-    longint unsigned GPIO_WIDTH = 4
+    longint unsigned GPIO_WIDTH = 8
 ) {
     reg {
         name = "GPIO Input Data";

@@ -124,9 +124,9 @@ def format_summary(stats, color=True):
         value_color = ""
         border_color = ""
 
-    border_top = "╭" + "─" * width + "╮"
-    border_middle = "├" + "─" * width + "┤"
-    border_bottom = "╰" + "─" * width + "╯"
+    border_top = "+" + "-" * width + "+"
+    border_middle = "+" + "-" * width + "+"
+    border_bottom = "+" + "-" * width + "+"
 
     lines = []
 
@@ -134,27 +134,27 @@ def format_summary(stats, color=True):
 
     title = "Synthesis Summary".center(width - 2)
 
-    lines.append(f"{border_color}│{reset} {bold}{title}{reset} {border_color}│{reset}")
+    lines.append(f"{border_color}|{reset} {bold}{title}{reset} {border_color}|{reset}")
 
     lines.append(f"{border_color}{border_middle}{reset}")
 
     lines.append(
-        f"{border_color}│{reset} "
+        f"{border_color}|{reset} "
         f"{bold}{module_color}{'Module':<16}{reset}: "
         f"{value_color}{module:<26}{reset} "
-        f"{border_color}│{reset}"
+        f"{border_color}|{reset}"
     )
 
-    lines.append(f"{border_color}│{reset} {' ' * (width - 2)} {border_color}│{reset}")
+    lines.append(f"{border_color}|{reset} {' ' * (width - 2)} {border_color}|{reset}")
 
     for indent, name, count in statistics:
         display_name = (" " * indent) + name
 
         lines.append(
-            f"{border_color}│{reset} "
+            f"{border_color}|{reset} "
             f"{name_color}{display_name:<16}{reset}: "
             f"{value_color}{count:<26}{reset} "
-            f"{border_color}│{reset}"
+            f"{border_color}|{reset}"
         )
 
     lines.append(f"{border_color}{border_bottom}{reset}")

@@ -1,8 +1,17 @@
+`ifndef ANTRV_ROM_INIT_FILE
+`define ANTRV_ROM_INIT_FILE ""
+`endif
+`ifndef ANTRV_RAM_INIT_FILE
+`define ANTRV_RAM_INIT_FILE ""
+`endif
+
 module antrv_top #(
-    parameter int          ROM_ADDR_WIDTH = $clog2(32'h40000),
-    parameter int          RAM_ADDR_WIDTH = $clog2(32'h20000),
-    parameter int          GPIO_WIDTH     = gpio_reg_file_pkg::GPIO_WIDTH,
-    parameter logic [31:0] GPIO_BASE_ADDR = 32'h80060000
+    parameter int           ROM_ADDR_WIDTH = $clog2(32'h40000),
+    parameter int           RAM_ADDR_WIDTH = $clog2(32'h20000),
+    parameter int           GPIO_WIDTH     = gpio_reg_file_pkg::GPIO_WIDTH,
+    parameter logic  [31:0] GPIO_BASE_ADDR = 32'h80060000,
+    parameter string        ROM_INIT_FILE  = `ANTRV_ROM_INIT_FILE,
+    parameter string        RAM_INIT_FILE  = `ANTRV_RAM_INIT_FILE
 ) (
     input logic                  clk_i,
     input logic                  rst_n_i,
@@ -17,8 +26,8 @@ module antrv_top #(
   logic [RAM_ADDR_WIDTH-1:0] ram_addr;
   logic [              31:0] ram_wdata;
   logic [              31:0] ram_rdata;
-  logic                      cpu_req;
   logic                      cpu_we;
+  logic                      cpu_req;
   logic [              31:0] cpu_byte_addr;
   logic [              31:0] cpu_rdata;
   logic                      cpu_ready;
@@ -27,7 +36,7 @@ module antrv_top #(
   logic                      gpio_ready;
   logic [              31:0] gpio_rdata;
   logic [              31:0] gpio_read_result;
-  logic                      dummy_gpio_error;
+  logic                      unused_gpio_error;
 
   assign ram_addr = {2'b00, cpu_byte_addr[RAM_ADDR_WIDTH-1:2]};
   assign gpio_selected = cpu_byte_addr[31:4] == GPIO_BASE_ADDR[31:4];
@@ -67,7 +76,8 @@ module antrv_top #(
 
   antrv_mem #(
       .ADDR_WIDTH(ROM_ADDR_WIDTH),
-      .DATA_WIDTH(32)
+      .DATA_WIDTH(32),
+      .INIT_FILE (ROM_INIT_FILE)
   ) inst_rom (
       .wclk_i (clk_i),
       .rclk_i (clk_i),
@@ -81,7 +91,8 @@ module antrv_top #(
 
   antrv_mem #(
       .ADDR_WIDTH(RAM_ADDR_WIDTH),
-      .DATA_WIDTH(32)
+      .DATA_WIDTH(32),
+      .INIT_FILE (RAM_INIT_FILE)
   ) inst_ram (
       .wclk_i (clk_i),
       .rclk_i (clk_i),
@@ -108,7 +119,7 @@ module antrv_top #(
       .wmask_i(ram_wmask),
       .ready_o(gpio_ready),
       .rdata_o(gpio_rdata),
-      .error_o(dummy_gpio_error),
+      .error_o(unused_gpio_error),
       .m_apb  (gpio_apb)
   );
 

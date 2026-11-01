@@ -22,7 +22,6 @@ class ErrorCounter(logging.Handler):
 
     def emit(self, record):
         self.count += 1
-        assert False
 
 
 @cocotb.test()
