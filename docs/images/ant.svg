@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300" viewBox="0 0 300 300" role="img" aria-labelledby="title desc">
+  <title id="title">ANTRV ant mascot</title>
+  <desc id="desc">A copper ant with six legs and antennae inside a charcoal circular circuit-board badge.</desc>
+  <defs>
+    <clipPath id="badge">
+      <circle cx="150" cy="150" r="146"/>
+    </clipPath>
+  </defs>
+  <circle cx="150" cy="150" r="146" fill="#18181b" stroke="#f0a66a" stroke-width="4"/>
+  <g clip-path="url(#badge)">
+  <g transform="translate(-110 60)">
+  <g fill="none" stroke="#52525b" stroke-width="3">
+    <path d="M24 40h100l24 24h56M24 140h100l24-24h56M456 40h-80l-24 24h-48M456 140h-80l-24-24h-48"/>
+    <circle cx="24" cy="40" r="5"/><circle cx="24" cy="140" r="5"/>
+    <circle cx="456" cy="40" r="5"/><circle cx="456" cy="140" r="5"/>
+  </g>
+  <g fill="none" stroke="#f0a66a" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M240 80l-28-28-24-8M246 86l-10-42 12-16M254 90l20-36 26-14"/>
+    <path d="M240 100l-28 28-24 8M246 96l-10 42 12 16M254 94l20 36 26 14"/>
+    <path d="M298 78l14-30 22-8M308 88l30-12 20 6"/>
+  </g>
+  <g fill="#c47c48" stroke="#f5c9a5" stroke-width="3">
+    <ellipse cx="204" cy="90" rx="36" ry="26"/>
+    <ellipse cx="253" cy="90" rx="19" ry="16"/>
+    <ellipse cx="292" cy="90" rx="24" ry="22"/>
+  </g>
+  <circle cx="301" cy="83" r="4" fill="#18181b"/>
+  </g>
+  </g>
+</svg>

@@ -1,0 +1,3 @@
+top = "tb_antrv"
+dependencies = ["antrv.toml"]
+sources = ["tb/tb_antrv.sv"]

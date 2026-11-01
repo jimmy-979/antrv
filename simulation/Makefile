@@ -14,7 +14,7 @@ COCOTB_TEST_MODULES ?= antrv_top_test
 WAVES ?= 1
 EXTRA_ARGS ?= -Wall --trace --trace-fst --trace-structs
 SIM_BUILD ?= build
-DESIGN ?= ../config/antrv.toml
+DESIGN ?= ../manifest/tb_antrv.toml
 PARSER ?= ../python/parse_design.py
 COMPILE_ARGS += $(abspath ../hal/build/regblock/verilator.vlt)
 export PYTHON COCOTB_TEST_MODULES WAVES EXTRA_ARGS SIM_BUILD DESIGN PARSER COMPILE_ARGS

@@ -1,13 +1,12 @@
 import avl
 from cocotb import start_soon
-from cocotb.triggers import RisingEdge
-from colorama import Fore, Style
+from cocotb.triggers import Event
 from tb.antrv.AntrvEnvCfg import AntrvEnvCfg
 from tb.antrv.AntrvMonitor import AntrvMonitor
 from tb.components.ElfLoader import ElfLoader
 from tb.components.SailReference import SailReference
 from tb.components.Scoreboard import Scoreboard
-from tb.utils.elf_utils import get_symbol_address, physical_to_local
+from tb.gpio.GpioAgent import GpioAgent
 
 
 class AntrvEnv(avl.Env):
@@ -16,22 +15,35 @@ class AntrvEnv(avl.Env):
 
         # Get variables
         self.disable_scoreboard = avl.Factory.get_variable(
-            f"{self.get_full_name}.disable_scoreboard", False
+            f"{self.get_full_name()}.disable_scoreboard", False
         )
-        self.elf = avl.Factory.get_variable(f"{self.get_full_name}.elf")
+        self.elf = avl.Factory.get_variable(f"{self.get_full_name()}.elf")
+
+        # Set once the DUT is out of reset and the ELF is loaded
+        self.ready = Event()
 
         # Create env components
         self.cfg = AntrvEnvCfg("cfg", self)
+
         self.elf_loader = ElfLoader("elf_loader", self)
-        self.sail_ref = SailReference("sail_ref", self)
+
+        self.gpio_agt = GpioAgent("gpio_agt", self)
+
         self.mon = AntrvMonitor("mon", self)
         if not self.disable_scoreboard:
+            self.sail_ref = SailReference("sail_ref", self)
             self.scb = Scoreboard("scb", self)
 
         # Config env components
         self.elf_loader.memories_map = self.cfg.memory_map
         self.elf_loader.rom = self.cfg.interface.rom
         self.elf_loader.ram = self.cfg.interface.ram
+
+        self.gpio_agt.cfg.interface.gpios = self.cfg.interface.gpios
+        self.gpio_agt.cfg.interface.gpio_drive_data = self.cfg.interface.gpio_drive_data
+        self.gpio_agt.cfg.interface.gpio_drive_enable = (
+            self.cfg.interface.gpio_drive_enable
+        )
 
         self.mon.cfg = self.cfg
 
@@ -52,41 +64,4 @@ class AntrvEnv(avl.Env):
 
         # Load elf to DUT memory
         self.elf_loader.load()
-
-        # Get tohost address. This will be used to terminate the test
-        tohost_phys_addr = get_symbol_address(self.elf, "tohost")
-        mem_name, tohost_lcl_addr = physical_to_local(
-            tohost_phys_addr, self.cfg.memory_map
-        )
-        assert mem_name.upper() == "RAM", (
-            f"{Fore.RED}Expected to find tohost address in RAM but it was found in {mem_name.upper()}{Style.RESET_ALL}"
-        )
-
-        # Wait for tohost to be written
-        self.raise_objection()
-
-        try:
-            while True:
-                tohost_data = int(self.cfg.interface.ram[tohost_lcl_addr >> 2].value)
-
-                if tohost_data == 1:
-                    await self.drain_time()
-                    self.info(f"{Fore.GREEN}Test passed{Style.RESET_ALL}")
-                    break
-
-                elif tohost_data == 3:
-                    await self.drain_time()
-                    self.error(f"{Fore.RED}Test failed{Style.RESET_ALL}")
-                    break
-
-                await RisingEdge(self.cfg.interface.clk)
-        finally:
-            self.drop_objection()
-
-    async def drain_time(self) -> None:
-        for _ in range(2):
-            while self.cfg.interface.get_curr_state() == "INSTR":
-                await RisingEdge(self.cfg.interface.clk)
-            while self.cfg.interface.get_curr_state() != "INSTR":
-                await RisingEdge(self.cfg.interface.clk)
-        await RisingEdge(self.cfg.interface.clk)
+        self.ready.set()

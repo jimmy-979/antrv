@@ -1,6 +1,6 @@
 PYTHON ?= python3
 PARSER ?= ../python/parse_design.py
-DESIGN ?= ../config/antrv_fpga.toml
+DESIGN ?= ../manifest/antrv_fpga.toml
 TOP ?= $(shell $(PYTHON) $(PARSER) $(DESIGN) --field top)
 SOURCES ?= $(shell $(PYTHON) $(PARSER) $(DESIGN) --field sources --root ..)
 SDC ?= ../constraints/Go_Board_Clock_Constraint.sdc

@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" role="img" aria-labelledby="title desc">
+  <title id="title">ANTRV CPU and SoC architecture</title>
+  <desc id="desc">Instruction ROM connects to a multi-cycle CPU containing a controller, register file, and bit-serial ALU. The data interface connects to RAM and an APB3 bridge. GPIO reads four Go Board switches on pins 3 through 0 and drives four LEDs on pins 7 through 4 in the GPIO demo.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse">
+      <path d="M0 0L8 4L0 8Z" fill="#f0a66a"/>
+    </marker>
+  </defs>
+  <rect width="960" height="720" rx="20" fill="#18181b"/>
+  <path d="M690 640H30V60H915V640H890M710 640H870" fill="none" stroke="#a1a1aa" stroke-width="2"/>
+  <g font-family="DejaVu Sans, sans-serif" text-anchor="middle" fill="#f4f4f5">
+    <text x="480" y="43" font-size="26" font-weight="bold">ANTRV Architecture</text>
+    <text x="145" y="100" font-size="22" font-weight="bold" fill="#f5c9a5">ANTRV SoC</text>
+    <rect x="50" y="155" width="190" height="100" rx="12" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
+    <text x="145" y="195" font-size="20">Instruction ROM</text>
+    <text x="145" y="225" font-size="14" fill="#a1a1aa">Instruction fetch</text>
+    <rect x="340" y="75" width="550" height="235" rx="14" fill="#292524" stroke="#f0a66a" stroke-width="2"/>
+    <text x="615" y="112" font-size="22" font-weight="bold">32-bit Multi-cycle CPU</text>
+    <rect x="375" y="135" width="480" height="58" rx="8" fill="#44403c"/>
+    <text x="615" y="160" font-size="18">Multi-cycle controller</text>
+    <text x="615" y="181" font-size="13" fill="#f5c9a5">INSTR / PC / ALU / LATCH_RF</text>
+    <rect x="375" y="225" width="190" height="58" rx="8" fill="#44403c"/>
+    <text x="470" y="250" font-size="18">Register file</text>
+    <text x="470" y="272" font-size="13" fill="#f5c9a5">32 register addresses</text>
+    <rect x="665" y="225" width="190" height="58" rx="8" fill="#44403c"/>
+    <text x="760" y="250" font-size="18">Bit-serial ALU</text>
+    <text x="760" y="272" font-size="13" fill="#f5c9a5">Shared iterative datapath</text>
+    <g transform="translate(0 40)">
+    <rect x="350" y="375" width="185" height="75" rx="10" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
+    <text x="442" y="406" font-size="20">Data RAM</text>
+    <text x="442" y="433" font-size="14" fill="#a1a1aa">Loads / stores</text>
+    <rect x="690" y="375" width="200" height="75" rx="10" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
+    <text x="790" y="420" font-size="20">APB3 bridge</text>
+    <rect x="690" y="505" width="200" height="60" rx="10" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
+    <text x="790" y="542" font-size="20">GPIO module</text>
+    <rect x="625" y="620" width="150" height="45" rx="8" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
+    <text x="700" y="639" font-size="16">4 LEDs</text>
+    <text x="700" y="657" font-size="12" fill="#f5c9a5">GPIO [7:4] / outputs</text>
+    <rect x="805" y="620" width="150" height="45" rx="8" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
+    <text x="880" y="639" font-size="16">4 switches</text>
+    <text x="880" y="657" font-size="12" fill="#f5c9a5">GPIO [3:0] / inputs</text>
+    </g>
+    <text x="530" y="352" font-size="17" fill="#a1a1aa">Data interface</text>
+    <text x="530" y="376" font-size="17" fill="#a1a1aa">+ address decode</text>
+  </g>
+  <g fill="none" stroke="#f0a66a" stroke-width="2.5" marker-end="url(#arrow)">
+    <path d="M240 205H340"/>
+    <path d="M565 254H665" marker-start="url(#arrow)"/>
+    <path d="M615 310V390H442V415" marker-start="url(#arrow)"/>
+    <path d="M615 390H790V415"/>
+    <g transform="translate(0 40)">
+    <path d="M790 450V505" marker-start="url(#arrow)"/>
+    <path d="M740 565V590H700V620"/>
+    <path d="M880 620V590H840V565"/>
+    </g>
+  </g>
+  <g fill="none" stroke="#f5c9a5" stroke-width="2" stroke-dasharray="5 4">
+    <path d="M470 193V225"/>
+    <path d="M760 193V225"/>
+  </g>
+</svg>
