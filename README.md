@@ -27,6 +27,7 @@ The [CPU](rtl/antrv/antrv_cpu.sv) is a single-hart, non-pipelined, multi-cycle d
 
 - **Bit-serial ALU:** arithmetic and logical operations process one bit per cycle; shifts iterate according to the shift amount. Operations therefore take multiple clock cycles rather than completing in one cycle.
 - **Shared ALU:** the same datapath computes instruction results, effective memory addresses, branch conditions, and next-PC values.
+- **Parallel operand selection:** mutually exclusive masks select ALU inputs, while branch decisions are computed as a single-bit condition before selecting the branch offset.
 - **Multi-cycle controller:** `INSTR`, `PC`, `ALU`, and `LATCH_RF` states coordinate instruction fetch, operand reads, execution, and register updates. State ordering depends on the instruction.
 - **Register file:** 32 register addresses, 32-bit values, a single synchronous read port, and a write port. Writes to register address zero are disabled.
 - **Separate instruction and data paths:** instruction fetch uses ROM; loads and stores use RAM or the GPIO peripheral.
@@ -90,12 +91,12 @@ The existing local place-and-route report for `antrv_fpga_top`, built with the G
 
 | Resource | Used | Available | Utilization |
 |---|---:|---:|---:|
-| Logic cells (`ICESTORM_LC`) | 1,000 | 1,280 | 78.1% |
+| Logic cells (`ICESTORM_LC`) | 906 | 1,280 | 70.8% |
 | Block RAMs (`ICESTORM_RAM`) | 6 | 16 | 37.5% |
 | I/O cells (`SB_IO`) | 44 | 72 | 61.1% |
 | Global buffers (`SB_GB`) | 2 | 8 | 25.0% |
 
-The final timing report gives approximately **62.34 MHz**, passing the 25 MHz constraint. This is a place-and-route timing estimate, not measured board performance or instruction throughput.
+Synthesis reports **643 four-input LUTs**. The final timing report gives approximately **59.30 MHz**, passing the 25 MHz constraint. This is a place-and-route timing estimate, not measured board performance or instruction throughput.
 
 These numbers cover the **entire FPGA top**, including CPU, memories, GPIO, and board I/O, not just the CPU. The wrapper declares 44 board ports, including ports not used by the GPIO demo. Utilization depends on the firmware image, parameters, tool versions, and placement.
 

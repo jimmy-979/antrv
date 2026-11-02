@@ -69,37 +69,33 @@ module antrv_cpu #(
     ALU,
     LATCH_RF
   } state_t;
-  logic               [1:0] instr_wait;
-  logic                     latch_rf_wait;
-  logic                     dmem_rdata_valid;
-  state_t                   state;
-  logic                     pc_update;
-  logic                     rf_sel_rs2;
-  logic                     alu_input_ready;
-  antrv_pkg::alu_op_t       alu_operation;
-  logic                     alu_result_valid;
-  logic                     rf_we;
-  logic                     memory_pending;
-  logic [31:0]              memory_addr;
+  logic               [ 1:0] instr_wait;
+  logic                      latch_rf_wait;
+  logic                      dmem_rdata_valid;
+  state_t                    state;
+  logic                      pc_update;
+  logic                      rf_sel_rs2;
+  logic                      alu_input_ready;
+  antrv_pkg::alu_op_t        alu_operation;
+  logic                      alu_result_valid;
+  logic                      rf_we;
+  logic                      memory_pending;
+  logic               [31:0] memory_addr;
 
   // ---------------------------- PC generation ---------------------------- //
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      pc <= 'h80000000;
-    end else begin
-      if (pc_update) begin
-        pc <= next_pc;
-      end
+      pc <= XLEN'(32'h8000_0000);
+    end else if (pc_update) begin
+      pc <= next_pc;
     end
   end
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      next_pc <= 0;
-    end else begin
-      if (state == PC && alu_result_valid) begin
-        next_pc <= opcode == JALR ? {alu_result[XLEN-1:1], 1'b0} : alu_result;
-      end
+      next_pc <= {XLEN{1'b0}};
+    end else if (state == PC && alu_result_valid) begin
+      next_pc <= opcode == JALR ? {alu_result[XLEN-1:1], 1'b0} : alu_result;
     end
   end
 
@@ -114,7 +110,7 @@ module antrv_cpu #(
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
       memory_pending <= 1'b0;
-      memory_addr <= '0;
+      memory_addr <= 32'b0;
     end else if (dmem_req_o) begin
       memory_pending <= !dmem_ready_i;
       if (!memory_pending) memory_addr <= alu_result;
@@ -170,73 +166,47 @@ module antrv_cpu #(
   };
 
   // --------------------------------- ALU --------------------------------- //
+  logic branch_taken;
   always_comb begin
-    // ALU 1st input
-    if (state == PC) begin
-      case (opcode)
-        JALR:    alu_ina = rf_rdata;
-        default: alu_ina = pc;
-      endcase
-    end else begin
-      case (opcode)
-        LOAD:    alu_ina = rf_rdata;  // LOAD
-        OP_IMM:  alu_ina = rf_rdata;  // OP-IMM
-        AUIPC:   alu_ina = pc;  // AUIPC
-        STORE:   alu_ina = rf_rdata;  // STORE
-        OP:      alu_ina = rf_rdata;  // OP
-        LUI:     alu_ina = 0;  // LUI
-        BRANCH:  alu_ina = rf_rdata;  // BRANCH
-        JALR:    alu_ina = pc;  // JALR
-        JAL:     alu_ina = pc;  // JAL
-        SYSTEM:  alu_ina = 0;  // SYSTEM
-        default: alu_ina = 0;
-      endcase
-    end
+    case (funct3[2:1])
+      2'b00: branch_taken = latched_alu_zero ^ funct3[0];
+      2'b10: branch_taken = latched_signed_less ^ funct3[0];
+      2'b11: branch_taken = !latched_alu_carry_out ^ funct3[0];
+      default: branch_taken = 1'b1;
+    endcase
+  end
 
-    // ALU 2nd input
-    if (state == PC) begin
-      case (opcode)
-        JALR: alu_inb = immI;
-        JAL: alu_inb = immJ;
-        BRANCH: begin
-          case (funct3)
-            3'b000:  alu_inb = latched_alu_zero ? immB : 4;  // BEQ
-            3'b001:  alu_inb = !latched_alu_zero ? immB : 4;  // BNE
-            3'b100:  alu_inb = latched_signed_less ? immB : 4;  // BLT
-            3'b101:  alu_inb = !latched_signed_less ? immB : 4;  // BGE
-            3'b110:  alu_inb = !latched_alu_carry_out ? immB : 4;  // BLTU
-            3'b111:  alu_inb = latched_alu_carry_out ? immB : 4;  // BGEU
-            default: alu_inb = immB;
-          endcase
-        end
-        default: alu_inb = 4;
-      endcase
-    end else begin
-      case (opcode)
-        LOAD:    alu_inb = immI;  // LOAD
-        OP_IMM:  alu_inb = immI;  // OP-IMM
-        AUIPC:   alu_inb = immU;  // AUIPC
-        STORE:   alu_inb = immS;  // STORE
-        OP:      alu_inb = latched_rf_rdata;  // OP
-        LUI:     alu_inb = immU;  // LUI
-        BRANCH:  alu_inb = latched_rf_rdata;  // BRANCH
-        JALR:    alu_inb = 4;  // JALR
-        JAL:     alu_inb = 4;  // JAL
-        SYSTEM:  alu_inb = 0;  // SYSTEM
-        default: alu_inb = 0;
-      endcase
-    end
+  // Mutually exclusive masks select operands without cascading wide muxes.
+  always_comb begin
+    alu_ina =
+        ({XLEN{(state == PC && opcode != JALR) ||
+               (state != PC && (opcode == AUIPC || opcode == JALR || opcode == JAL))}} & pc) |
+        ({XLEN{(state == PC && opcode == JALR) ||
+               (state != PC && (opcode == LOAD || opcode == OP_IMM ||
+                               opcode == STORE || opcode == OP || opcode == BRANCH))}} & rf_rdata);
+
+    alu_inb =
+        ({XLEN{(state == PC && opcode == JALR) ||
+               (state != PC && (opcode == LOAD || opcode == OP_IMM))}} & immI) |
+        ({XLEN{state == PC && opcode == JAL}} & immJ) |
+        ({XLEN{state == PC && opcode == BRANCH && branch_taken}} & immB) |
+        ({XLEN{state != PC && (opcode == AUIPC || opcode == LUI)}} & immU) |
+        ({XLEN{state != PC && opcode == STORE}} & immS) |
+        ({XLEN{state != PC && (opcode == OP || opcode == BRANCH)}} & latched_rf_rdata) |
+        ({XLEN{(state == PC && opcode != JALR && opcode != JAL &&
+                (opcode != BRANCH || !branch_taken)) ||
+               (state != PC && (opcode == JALR || opcode == JAL))}} & XLEN'(32'd4));
   end
 
   assign signed_less = (alu_ina[XLEN-1] != alu_inb[XLEN-1]) ? alu_ina[XLEN-1] : alu_result[XLEN-1];
 
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
-      latched_rf_rdata      <= 0;
-      latched_alu_zero      <= 0;
-      latched_alu_carry_out <= 0;
-      latched_signed_less   <= 0;
-      load_offset           <= 0;
+      latched_rf_rdata      <= {XLEN{1'b0}};
+      latched_alu_zero      <= 1'b0;
+      latched_alu_carry_out <= 1'b0;
+      latched_signed_less   <= 1'b0;
+      load_offset           <= 2'b0;
     end else begin
       if (state == LATCH_RF) begin
         latched_rf_rdata <= rf_rdata;
@@ -270,11 +240,9 @@ module antrv_cpu #(
   );
 
   // ---------------------------- Register file ---------------------------- //
-  assign rf_we = opcode == LOAD ? dmem_rdata_valid : opcode != BRANCH &&
-                                                     opcode != STORE  &&
-                                                     opcode != MISC_MEM &&
-                                                     alu_result_valid &&
-                                                     state == ALU;
+  assign rf_we = opcode == LOAD ? dmem_rdata_valid :
+                 opcode != BRANCH && opcode != STORE && opcode != MISC_MEM &&
+                 alu_result_valid && state == ALU;
   assign rf_raddr = rf_sel_rs2 ? rs2 : rs1;
   assign load_half = load_offset[1] ? dmem_rdata_i[31:16] : dmem_rdata_i[15:0];
   assign load_byte = load_offset[0] ? load_half[15:8] : load_half[7:0];
@@ -293,11 +261,11 @@ module antrv_cpu #(
     if (opcode == OP || opcode == OP_IMM) begin
       case (funct3)
         3'b010: begin
-          rf_wdata = '0;
+          rf_wdata = {XLEN{1'b0}};
           rf_wdata[0] = signed_less;
         end
         3'b011: begin
-          rf_wdata = '0;
+          rf_wdata = {XLEN{1'b0}};
           rf_wdata[0] = !alu_carry_out;
         end
         default: ;
@@ -324,80 +292,60 @@ module antrv_cpu #(
       alu_operation = antrv_pkg::ALU_ADD;
     end else begin
       case (opcode)
-        LOAD:    alu_operation = antrv_pkg::ALU_ADD;  // LOAD
-        OP_IMM: begin  // OP-IMM
+        LOAD, AUIPC, STORE, LUI, JALR, JAL, SYSTEM:
+          alu_operation = antrv_pkg::ALU_ADD;
+        OP_IMM: begin
           case (funct3)
-            3'b000:  alu_operation = antrv_pkg::ALU_ADD;  // ADDI
-            3'b010:  alu_operation = antrv_pkg::ALU_SUB;  // SLTI
-            3'b011:  alu_operation = antrv_pkg::ALU_SUB;  // SLTIU
-            3'b100:  alu_operation = antrv_pkg::ALU_XOR;  // XORI
-            3'b110:  alu_operation = antrv_pkg::ALU_OR;  // ORI
-            3'b111:  alu_operation = antrv_pkg::ALU_AND;  // ANDI
-            3'b001:  alu_operation = antrv_pkg::ALU_SLL;  // SLLI
-            3'b101: begin
-              alu_operation = funct7 ? antrv_pkg::ALU_SRA :  // SRA
-              antrv_pkg::ALU_SRL;  // SRLI
-            end
+            3'b000: alu_operation = antrv_pkg::ALU_ADD;  // ADDI
+            3'b010, 3'b011: alu_operation = antrv_pkg::ALU_SUB;  // SLTI / SLTIU
+            3'b100: alu_operation = antrv_pkg::ALU_XOR;  // XORI
+            3'b110: alu_operation = antrv_pkg::ALU_OR;  // ORI
+            3'b111: alu_operation = antrv_pkg::ALU_AND;  // ANDI
+            3'b001: alu_operation = antrv_pkg::ALU_SLL;  // SLLI
+            3'b101: alu_operation = funct7 ? antrv_pkg::ALU_SRA : antrv_pkg::ALU_SRL;
             default: alu_operation = antrv_pkg::ALU_ADD;
           endcase
         end
-        AUIPC:   alu_operation = antrv_pkg::ALU_ADD;  // AUIPC
-        STORE:   alu_operation = antrv_pkg::ALU_ADD;  // STORE
-        OP: begin  // OP
+        OP: begin
           case (funct3)
-            3'b000: begin
-              alu_operation = funct7 ? antrv_pkg::ALU_SUB :  // SUB
-              antrv_pkg::ALU_ADD;  // ADD
-            end
-            3'b001:  alu_operation = antrv_pkg::ALU_SLL;  // SLL
-            3'b010:  alu_operation = antrv_pkg::ALU_SUB;  // SLT
-            3'b011:  alu_operation = antrv_pkg::ALU_SUB;  // SLTU
-            3'b100:  alu_operation = antrv_pkg::ALU_XOR;  // XOR
-            3'b101: begin
-              alu_operation = funct7 ? antrv_pkg::ALU_SRA :  // SRA
-              antrv_pkg::ALU_SRL;  // SRL
-            end
-            3'b110:  alu_operation = antrv_pkg::ALU_OR;  // OR
-            3'b111:  alu_operation = antrv_pkg::ALU_AND;  // AND
+            3'b000: alu_operation = funct7 ? antrv_pkg::ALU_SUB : antrv_pkg::ALU_ADD;
+            3'b001: alu_operation = antrv_pkg::ALU_SLL;  // SLL
+            3'b010, 3'b011: alu_operation = antrv_pkg::ALU_SUB;  // SLT / SLTU
+            3'b100: alu_operation = antrv_pkg::ALU_XOR;  // XOR
+            3'b101: alu_operation = funct7 ? antrv_pkg::ALU_SRA : antrv_pkg::ALU_SRL;
+            3'b110: alu_operation = antrv_pkg::ALU_OR;  // OR
+            3'b111: alu_operation = antrv_pkg::ALU_AND;  // AND
             default: alu_operation = antrv_pkg::ALU_AND;
           endcase
         end
-        LUI:     alu_operation = antrv_pkg::ALU_ADD;  // LUI
-        BRANCH:  alu_operation = antrv_pkg::ALU_SUB;  // BRANCH
-        JALR:    alu_operation = antrv_pkg::ALU_ADD;  // JALR
-        JAL:     alu_operation = antrv_pkg::ALU_ADD;  // JAL
-        SYSTEM:  alu_operation = antrv_pkg::ALU_ADD;  // SYSTEM
+        BRANCH: alu_operation = antrv_pkg::ALU_SUB;
         default: alu_operation = antrv_pkg::ALU_ADD;
       endcase
     end
   end
 
-  // In case of JALR we need to save return address and calculate the
-  // address to jump to. We don't want to write to the register that
-  // will be used to calculate the jump address. So firstly next PC
-  // needs to be calculated, then update registers and finally fetch new
-  // instruction. But in case of BRANCH instructions firstly the ALU
-  // calculation should be performed and after that PC calculation
+  // JALR computes its target before writing rd, which may also be rs1.
+  // Branches compare operands before calculating the next PC.
   always_ff @(posedge clk_i or negedge rst_n_i) begin
     if (!rst_n_i) begin
       state            <= INSTR;
-      pc_update        <= 0;
-      alu_input_ready  <= 0;
-      rf_sel_rs2       <= 0;
-      dmem_rdata_valid <= 0;
-      instr_wait       <= 0;
-      latch_rf_wait    <= 0;
+      pc_update        <= 1'b0;
+      alu_input_ready  <= 1'b0;
+      rf_sel_rs2       <= 1'b0;
+      dmem_rdata_valid <= 1'b0;
+      instr_wait       <= 2'b0;
+      latch_rf_wait    <= 1'b0;
     end else begin
       // Default control outputs
       state            <= INSTR;
-      pc_update        <= 0;
-      alu_input_ready  <= 0;
-      rf_sel_rs2       <= 0;
-      dmem_rdata_valid <= 0;
-      instr_wait       <= 0;
-      latch_rf_wait    <= 0;
+      pc_update        <= 1'b0;
+      alu_input_ready  <= 1'b0;
+      rf_sel_rs2       <= 1'b0;
+      dmem_rdata_valid <= 1'b0;
+      instr_wait       <= 2'b0;
+      latch_rf_wait    <= 1'b0;
 
-      case (state)
+      unique case (state)
         // INSTR: Allow the instruction to be decoded.
         INSTR: begin
           if (&instr_wait) begin
@@ -452,15 +400,13 @@ module antrv_cpu #(
 
           if (dmem_req_o && dmem_ready_i) begin
             dmem_rdata_valid <= 1'b1;
-            alu_input_ready <= 1'b0;
+            alu_input_ready  <= 1'b0;
           end else if (alu_result_valid) begin
             dmem_rdata_valid <= opcode != LOAD && opcode != STORE;
             // Prevent zero-distance shifts from completing again after reset.
             alu_input_ready  <= 1'b0;
           end
         end
-
-        default: ;
       endcase
     end
   end
