@@ -1,0 +1,37 @@
+addrmap uart_reg_file {
+    reg {
+        name = "UART Transmit Data";
+        field {
+            sw = w;
+            hw = r;
+            swmod = true;
+            reset = 0;
+        } data[7:0];
+    } tx_data;
+
+    reg {
+        name = "UART Receive Data";
+        field {
+            sw = r;
+            hw = w;
+            we = true;
+            swacc = true;
+            reset = 0;
+        } data[7:0];
+    } rx_data;
+
+    reg {
+        name = "UART Status";
+        field {
+            sw = r;
+            hw = w;
+            reset = 0;
+        } tx_busy[0:0];
+        field {
+            sw = r;
+            hw = w;
+            reset = 0;
+        } rx_valid[1:1];
+    } status;
+
+};

@@ -231,7 +231,7 @@ antrv/
 |-- constraints/   # Go Board pin and clock constraints
 |-- docs/
 |   `-- images/    # README illustrations
-|-- hal/           # SystemRDL GPIO registers and generation targets
+|-- hal/           # SystemRDL GPIO/UART registers and generation targets
 |-- python/        # Source parsing, ELF conversion, and report utilities
 |-- rtl/           # CPU, SoC, APB3 bridge, GPIO, and FPGA wrapper
 |-- simulation/    # cocotb tests and architectural-test integration
