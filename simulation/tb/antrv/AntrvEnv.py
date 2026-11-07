@@ -39,11 +39,7 @@ class AntrvEnv(avl.Env):
         self.elf_loader.rom = self.cfg.interface.rom
         self.elf_loader.ram = self.cfg.interface.ram
 
-        self.gpio_agt.cfg.interface.gpios = self.cfg.interface.gpios
-        self.gpio_agt.cfg.interface.gpio_drive_data = self.cfg.interface.gpio_drive_data
-        self.gpio_agt.cfg.interface.gpio_drive_enable = (
-            self.cfg.interface.gpio_drive_enable
-        )
+        self.gpio_agt.cfg.interface = self.cfg.interface
 
         self.mon.cfg = self.cfg
 
