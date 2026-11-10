@@ -10,8 +10,8 @@ import subprocess
 import sys
 import time
 
-
 ANSI = re.compile(r"\x1b\[[0-9;]*m")
+SPINNER = ("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")
 
 
 def run(command: list[str], total: int) -> int:
@@ -47,21 +47,59 @@ def run(command: list[str], total: int) -> int:
         if not interactive:
             return text
         text = re.sub(r"\[[#-]+\]", lambda match: f"\033[36m{match[0]}\033[0m", text)
-        for label, color in (("Passed", 32), ("Failed", 31), ("Running", 36), ("Cached", 33)):
+        for label, color in (
+            ("Passed", 32),
+            ("Failed", 31),
+            ("Running", 36),
+            ("Cached", 33),
+        ):
             text = re.sub(
                 rf"{label}: \d+",
-                lambda match: f"\033[{color}m{match[0]}\033[0m",
+                lambda match, color=color: f"\033[{color}m{match[0]}\033[0m",
                 text,
             )
         return text
 
     def draw() -> None:
-        if interactive:
-            width = max(1, shutil.get_terminal_size().columns - 1)
-            text = summary()
-            if len(text) > width:
-                text = summary(compact=True)
-            print("\r\033[2K" + styled(text[:width]), end="", flush=True)
+        if not interactive:
+            return
+
+        width = shutil.get_terminal_size().columns
+        elapsed = int(time.monotonic() - started)
+
+        completed = len(finished)
+        percent = completed * 100 // total if total else 100
+
+        hours, remainder = divmod(elapsed, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        elapsed_str = f"{hours}:{minutes:02}:{seconds:02}"
+
+        spinner = SPINNER[int(time.monotonic() * 10) % len(SPINNER)]
+
+        cyan = "\033[36m"
+        magenta = "\033[35m"
+        green = "\033[32m"
+        orange = "\033[38;5;208m"
+        gray = "\033[90m"
+        reset = "\033[0m"
+
+        prefix = f"{cyan}{spinner} Running regression...{reset} "
+        suffix = (
+            f"  {green}{completed}/{total}{reset}"
+            f"  {magenta}{percent}%{reset}"
+            f" {gray}elapsed:{reset} {orange}{elapsed_str}{reset}"
+        )
+
+        # Keep the progress bar within the terminal width.
+        bar_width = max(5, min(48, width - 55))
+
+        filled = min(bar_width, completed * bar_width // total) if total else bar_width
+
+        bar = f"{magenta}{'━' * filled}{reset}{gray}{'━' * (bar_width - filled)}{reset}"
+
+        line = prefix + bar + suffix
+
+        print(f"\r\033[2K{line}", end="", flush=True)
 
     def output(line: str) -> None:
         plain = ANSI.sub("", line)
@@ -82,8 +120,11 @@ def run(command: list[str], total: int) -> int:
 
     # Recursive Make's jobserver descriptors must reach the child Make process.
     process = subprocess.Popen(
-        command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-        close_fds=False, start_new_session=True,
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        close_fds=False,
+        start_new_session=True,
     )
     assert process.stdout is not None
     pending = b""
@@ -93,7 +134,7 @@ def run(command: list[str], total: int) -> int:
         draw()
         try:
             while selector.get_map():
-                for key, _ in selector.select(timeout=1):
+                for key, _ in selector.select(timeout=0.08):
                     chunk = os.read(key.fd, 65536)
                     if not chunk:
                         selector.unregister(key.fileobj)
@@ -119,7 +160,10 @@ def run(command: list[str], total: int) -> int:
             process.stdout.close()
             if interactive:
                 print("\r\033[2K", end="")
-            print(styled(summary()) + (" | Interrupted" if interrupted else ""), flush=True)
+            print(
+                styled(summary()) + (" | Interrupted" if interrupted else ""),
+                flush=True,
+            )
     return result if result >= 0 else 128 - result
 
 
@@ -130,14 +174,18 @@ def main() -> None:
     args = parser.parse_args()
     command = [args.make, "--no-print-directory", "-f", args.makefile]
     discovery = subprocess.run(
-        command + ["-s", "list-tests"], capture_output=True, text=True,
+        command + ["-s", "list-tests"],
+        capture_output=True,
+        text=True,
         close_fds=False,
+        check=False,
     )
     if discovery.returncode:
         sys.stderr.write(discovery.stdout + discovery.stderr)
         raise SystemExit(discovery.returncode)
     names = [
-        ANSI.sub("", line) for line in discovery.stdout.splitlines()
+        ANSI.sub("", line)
+        for line in discovery.stdout.splitlines()
         if ANSI.sub("", line).startswith("test-")
     ]
     raise SystemExit(run(command + ["all"], len(names)))

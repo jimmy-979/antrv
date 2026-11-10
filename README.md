@@ -2,7 +2,7 @@
 
 ![ANTRV ant mascot on a circuit-board background](docs/images/ant.png)
 
-**A compact, multi-cycle 32-bit RISC-V CPU and GPIO SoC written in SystemVerilog for FPGA implementations.**
+**Compact RV32I SoC in SystemVerilog with a synthesizable multi-cycle CPU, bit-serial ALU, and APB3 interface for peripheral communication. Includes FPGA synthesis support and has a strong focus on verification.**
 
 ANTRV trades instruction throughput for a small datapath: an iterative, bit-serial ALU executes instructions under a multi-cycle controller. The project includes an APB3 GPIO peripheral, an FPGA wrapper for the Nandland Go Board, and a cocotb verification environment.
 
@@ -10,11 +10,10 @@ ANTRV trades instruction throughput for a small datapath: an iterative, bit-seri
 
 - [CPU architecture](#cpu-architecture)
 - [RISC-V features](#risc-v-features)
-- [GPIO peripheral](#gpio-peripheral)
 - [iCE40 FPGA resources](#ice40-fpga-resources)
 - [Prerequisites](#prerequisites)
-- [Running synthesis](#running-synthesis)
 - [Running simulation](#running-simulation)
+- [Running synthesis](#running-synthesis)
 - [Repository layout](#repository-layout)
 
 ## CPU architecture
@@ -69,19 +68,6 @@ ANTRV implements the main **RV32I integer instruction datapath**, with 32-bit in
 - The `M`, `A`, `C`, floating-point, and vector extensions are not implemented.
 - The verification configuration targets RV32I architectural tests, but this is **not a claim of full RV32I or privileged-architecture certification**. The architecture-test configuration is a test/reference-model description, not proof that every listed capability exists in RTL.
 
-## GPIO peripheral
-
-The [GPIO module](rtl/gpio/gpio_top.sv) provides **8 bidirectional pins** through an APB3 register interface. Its register block is generated from [SystemRDL](hal/gpio.rdl) with PeakRDL.
-
-Generate the GPIO register documentation with PeakRDL:
-
-```bash
-cd hal
-make html
-```
-
-This runs `peakrdl html gpio.rdl -o build/html/`. Open `hal/build/html/index.html` in a browser to view the register map and field descriptions.
-
 ## iCE40 FPGA resources
 
 The existing local place-and-route report for `antrv_fpga_top`, built with the GPIO firmware, reports:
@@ -124,7 +110,7 @@ The current simulation environment uses cocotb 2.x APIs.
 ```bash
 python3 -m venv .venv
 source .venv/bin/activate
-python -m pip install cocotb avl-core capstone pyelftools colorama peakrdl
+python3 -m pip install -r requirements.txt
 ```
 
 Initialize the architecture-test submodule if needed:
@@ -135,43 +121,13 @@ git submodule update --init --recursive
 
 The configured submodule URL uses SSH, so GitHub SSH access is required unless you override that URL locally.
 
-## Running synthesis
-
-Activate the Python environment first so `peakrdl` is on `PATH`.
-
-### Build firmware and an FPGA bitstream
-
-```bash
-cd synthesis
-make all ELF=../code/build/gpio_test.elf
-```
-
-This generates the GPIO register block, compiles the GPIO firmware, creates memory initialization files, runs synthesis and place-and-route, and packs the bitstream.
-
-### Run individual stages
-
-After building the firmware with `make -C code`:
-
-```bash
-cd synthesis
-make synth ELF=../code/build/gpio_test.elf
-make pnr   ELF=../code/build/gpio_test.elf
-make bits  ELF=../code/build/gpio_test.elf
-```
-
-Use the same `ELF` setting for every stage. Omitting it builds without a firmware initialization image.
-
-The default design is [antrv_fpga.toml](manifest/antrv_fpga.toml). Board pin and clock constraints live in [constraints/](constraints/).
-
-The resulting bitstream is `synthesis/build/bitstream/antrv_fpga_top.bin`. Board programming is separate from the build targets.
-
 ## Running simulation
 
 The [cocotb testbench](simulation/antrv_top_test.py) uses an AVL environment with instruction monitoring, a Sail reference model, a scoreboard, and a GPIO agent. The [simulation wrapper](tb/tb_antrv.sv) exposes external GPIO drive controls without changing the synthesizable SoC.
 
 Activate the Python environment first with `source .venv/bin/activate`. Each command block below assumes you start from the repository root.
 
-### GPIO test
+### Firmware tests
 
 ```bash
 cd simulation
@@ -187,9 +143,7 @@ First follow the submodule's prerequisite instructions, then generate the ANTRV 
 
 ```bash
 cd simulation/riscv-arch-test
-make \
-  CONFIG_FILES="$(pwd)/../act4_config/test_config.yaml" \
-  EXTENSIONS=I
+make CONFIG_FILES="../act4_config/test_config.yaml" EXTENSIONS=I
 ```
 
 The testbench discovers ELFs under `simulation/riscv-arch-test/work/antrv/elfs/rv32i/I/`. Generate them **before** collecting tests; otherwise the architectural-test list can be empty.
@@ -204,7 +158,7 @@ make regenerate list-tests
 make RERUN=1 test-antrv_top_test-test_elf-elf-I-ori-00
 
 # Run the full discovered regression, including GPIO.
-make -j2 RERUN=1 all
+make RERUN=1 all -j"$(nproc)" -k
 ```
 
 Architectural tests wait for a firmware `tohost` write and check execution against Sail. The GPIO test disables the instruction scoreboard and uses GPIO observations instead.
@@ -221,6 +175,19 @@ make lint
 ```
 
 The HTML report is written to `simulation/build/regression.html`. Open FST waveforms with a compatible viewer such as GTKWave.
+
+## Running synthesis
+
+### Build firmware and an FPGA bitstream
+
+```bash
+cd synthesis
+make all ELF=../code/build/gpio_test.elf
+```
+
+This generates the register blocks, compiles the selected firmware, creates memory initialization files, runs synthesis and place-and-route, and packs the bitstream.
+
+The resulting bitstream is `synthesis/build/bitstream/antrv_fpga_top.bin`. Board programming is separate from the build targets.
 
 ## Repository layout
 

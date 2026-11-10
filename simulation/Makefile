@@ -8,7 +8,7 @@
 # Multiple test targets show summaries; single tests also stream their full logs.
 # Python support lives in tb/: antrv/ for DUT-specific AVL code,
 # components/ for shared AVL code, and utils/ for simulation helpers.
-PYTHON ?= python
+PYTHON ?= python3
 VERILATOR ?= verilator
 COCOTB_TEST_MODULES ?= antrv_top_test
 WAVES ?= 1
