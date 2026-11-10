@@ -117,6 +117,8 @@ Initialize the architecture-test submodule if needed:
 
 ```bash
 git submodule update --init --recursive
+cd simulation/riscv-arch-test
+mise deps
 ```
 
 The configured submodule URL uses SSH, so GitHub SSH access is required unless you override that URL locally.
