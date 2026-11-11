@@ -14,8 +14,6 @@ addrmap uart_reg_file {
         field {
             sw = r;
             hw = w;
-            we = true;
-            swacc = true;
             reset = 0;
         } data[7:0];
     } rx_data;

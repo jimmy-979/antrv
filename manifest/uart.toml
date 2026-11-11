@@ -1,0 +1,9 @@
+top = "uart_top"
+sources = [
+    "rtl/common/apb3_intf.sv",
+    "hal/build/regblock/uart_reg_file_pkg.sv",
+    "hal/build/regblock/uart_reg_file.sv",
+    "rtl/uart/uart_rx.sv",
+    "rtl/uart/uart_tx.sv",
+    "rtl/uart/uart_top.sv",
+]
