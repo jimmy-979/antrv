@@ -17,5 +17,12 @@
   "files.exclude": {
     "**/.git": true,
     "**/__pycache__": true
-  }
+  },
+  // C settings
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "C_Cpp.default.includePath": [
+    "${workspaceFolder}/hal/build/c-header"
+  ]
 }

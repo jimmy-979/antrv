@@ -9,11 +9,17 @@ class AntrvEnvCfg(avl.Object):
         # --------------------- Clock frequency in MHz ---------------------- #
         self.clk_freq_mhz = 25
 
-        # --------------------- Clock frequency in MHz ---------------------- #
+        # ---------------------- Reset duration in ns ----------------------- #
         self.rst_duration_ns = 160
 
-        # ----------------------- Timeout time in ns ------------------------ #
+        # ----------------------- Timeout time in ms ------------------------ #
         self.timeout_ms = 50
+
+        # ------------------ UART configuration parameters ------------------ #
+        self.data_width = 8
+        self.parity = None
+        self.stop_bits = 1
+        self.baud_rate = 115200
 
         # ---------------------------- Interface ---------------------------- #
         self.interface = AntrvInterface("interface", self)

@@ -39,5 +39,8 @@ class AntrvInterface(avl.Object):
         self.gpio_drive_data = self.hdl.gpio_drive_data
         self.gpio_drive_enable = self.hdl.gpio_drive_enable
 
+        self.uart_rx = self.hdl.uart_rx
+        self.uart_tx = self.hdl.uart_tx
+
     def get_curr_state(self) -> str:
         return State(self.state.value).name

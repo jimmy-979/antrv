@@ -19,19 +19,17 @@ module antrv_top #(
     parameter string        ROM_INIT_FILE    = `ANTRV_ROM_INIT_FILE,
     parameter string        RAM_INIT_FILE    = `ANTRV_RAM_INIT_FILE
 ) (
-    input logic                  clk_i,
-    input logic                  rst_n_i,
+    input  logic                  clk_i,
+    input  logic                  rst_n_i,
     // GPIO
-    inout wire  [GPIO_WIDTH-1:0] gpio_pins_io
+    inout  wire  [GPIO_WIDTH-1:0] gpio_pins_io,
+    // UART
+    input  logic                  uart_rx_i,
+    output logic                  uart_tx_o
 );
 
   localparam logic [31:0] GpioBaseAddr = PERIPH_BASE_ADDR;
-  localparam logic [31:0] GpioSize     = 32'h0000000C;
-  localparam logic [31:0] UartBaseAddr = GpioBaseAddr + GpioSize;
-  localparam logic [31:0] UartSize     = 32'h0000000C;
-
-  localparam int          IdGpio       = 0;
-  localparam int          IdUart       = 1;
+  localparam logic [31:0] UartBaseAddr = GpioBaseAddr + gpio_reg_file_pkg::GPIO_REG_FILE_SIZE;
 
   // ------------------------------------------------------------
   // CPU / Memory signals
@@ -64,29 +62,16 @@ module antrv_top #(
   logic                      cpu_using_peripheral;
   logic [              31:0] peripheral_read_result;
 
-  // ------------------------------------------------------------
-  // APB interfaces
-  // ------------------------------------------------------------
-
-  apb3_intf cpu_apb (
+  apb3_intf peripheral_apb (
       .PCLK   (clk_i),
       .PRESETn(rst_n_i)
   );
 
-  apb3_intf peripheral_apb[0:1] (
-      .PCLK(clk_i),
-      .PRESETn(rst_n_i)
-  );
-
-  // ------------------------------------------------------------
-  // Address decoding
-  // ------------------------------------------------------------
-
   assign peripheral_selected =
       (cpu_byte_addr >= GpioBaseAddr &&
-       cpu_byte_addr < GpioBaseAddr + GpioSize) ||
+       cpu_byte_addr < GpioBaseAddr + gpio_reg_file_pkg::GPIO_REG_FILE_SIZE) ||
       (cpu_byte_addr >= UartBaseAddr &&
-       cpu_byte_addr < UartBaseAddr + UartSize);
+       cpu_byte_addr < UartBaseAddr + uart_reg_file_pkg::UART_REG_FILE_SIZE);
 
   // ------------------------------------------------------------
   // RAM interface
@@ -180,68 +165,35 @@ module antrv_top #(
   );
 
   // ------------------------------------------------------------
-  // CPU-to-APB bridge (single bridge)
+  // PERIPHERALS
   // ------------------------------------------------------------
 
   antrv_apb3_bridge inst_apb_bridge (
       .clk_i  (clk_i),
       .rst_n_i(rst_n_i),
-
       .req_i  (cpu_req && peripheral_selected),
       .we_i   (cpu_we),
       .addr_i (cpu_byte_addr),
       .wdata_i(ram_wdata),
       .wmask_i(ram_wmask),
-
       .ready_o(peripheral_ready),
       .rdata_o(peripheral_rdata),
       .error_o(unused_peripheral_error),
-
-      .m_apb(cpu_apb)
+      .m_apb  (peripheral_apb)
   );
 
-  // ------------------------------------------------------------
-  // APB decoder / interconnect
-  // ------------------------------------------------------------
-
-  antrv_apb3_decoder #(
-      .N        (2),
-      .BASE_ADDR('{GpioBaseAddr, UartBaseAddr}),
-      .SIZE     ('{GpioSize, UartSize})
-  ) inst_apb_decoder (
-      .m_apb(cpu_apb),
-      .s_apb(peripheral_apb)
-  );
-
-  // ------------------------------------------------------------
-  // GPIO
-  // ------------------------------------------------------------
-
-  gpio_top #(
-      .GPIO_WIDTH(GPIO_WIDTH)
-  ) inst_gpio (
-      .clk_i       (clk_i),
-      .rst_n_i     (rst_n_i),
-      .s_apb       (peripheral_apb[IdGpio]),
-      .gpio_pins_io(gpio_pins_io)
-  );
-
-  // ------------------------------------------------------------
-  // UART
-  // ------------------------------------------------------------
-
-  logic unused_rx;
-  logic unused_tx;
-
-  uart_top #(
+  antrv_peripherals #(
+      .BASE_ADDR (PERIPH_BASE_ADDR),
+      .GPIO_WIDTH(GPIO_WIDTH),
       .BAUD_RATE (BAUD_RATE),
       .CLOCK_FREQ(CLOCK_FREQ)
-  ) inst_uart (
-      .clk_i  (clk_i),
-      .rst_n_i(rst_n_i),
-      .s_apb  (peripheral_apb[IdUart]),
-      .rx_i   (unused_rx),
-      .tx_o   (unused_tx)
+  ) inst_peripherals (
+      .clk_i       (clk_i),
+      .rst_n_i     (rst_n_i),
+      .s_apb       (peripheral_apb),
+      .gpio_pins_io(gpio_pins_io),
+      .uart_rx_i   (uart_rx_i),
+      .uart_tx_o   (uart_tx_o)
   );
 
 endmodule

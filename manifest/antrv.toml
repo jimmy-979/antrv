@@ -8,5 +8,6 @@ sources = [
     "rtl/antrv/antrv_cpu.sv",
     "rtl/antrv/antrv_apb3_bridge.sv",
     "rtl/antrv/antrv_apb3_decoder.sv",
+    "rtl/antrv/antrv_peripherals.sv",
     "rtl/antrv/antrv_top.sv",
 ]

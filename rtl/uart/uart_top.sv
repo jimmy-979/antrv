@@ -22,7 +22,7 @@ module uart_top #(
       .clk_i      (clk_i),
       .rst_n_i    (rst_n_i),
       .rx_serial_i(rx_i),
-      .rx_dv_o    (hwif_in.status.rx_valid.next),
+      .rx_dv_o    (hwif_in.status.rx_valid.hwset),
       .rx_byte_o  (hwif_in.rx_data.data.next)
   );
 

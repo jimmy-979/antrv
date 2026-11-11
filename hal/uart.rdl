@@ -27,9 +27,11 @@ addrmap uart_reg_file {
         } tx_busy[0:0];
         field {
             sw = r;
-            hw = w;
+            hw = r;
+            hwset = true;
+            rclr = true;
+            precedence = hw;
             reset = 0;
         } rx_valid[1:1];
     } status;
-
 };

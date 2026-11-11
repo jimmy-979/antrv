@@ -4,9 +4,13 @@ module tb_antrv #(
 
   logic                  clk;
   logic                  rst_n;
+
   logic [GPIO_WIDTH-1:0] gpio_drive_data;
   logic [GPIO_WIDTH-1:0] gpio_drive_enable;
   logic [GPIO_WIDTH-1:0] gpio_pins;
+
+  logic                  uart_rx;
+  logic                  uart_tx;
 
   for (genvar pin = 0; pin < GPIO_WIDTH; pin++) begin : gen_gpio_drive
     assign gpio_pins[pin] = gpio_drive_enable[pin] ? gpio_drive_data[pin] : 1'bz;
@@ -17,7 +21,9 @@ module tb_antrv #(
   ) inst_antrv (
       .clk_i       (clk),
       .rst_n_i     (rst_n),
-      .gpio_pins_io(gpio_pins)
+      .gpio_pins_io(gpio_pins),
+      .uart_rx_i   (uart_rx),
+      .uart_tx_o   (uart_tx)
   );
 
 endmodule

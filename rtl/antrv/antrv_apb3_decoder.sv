@@ -5,10 +5,10 @@ module antrv_apb3_decoder #(
     parameter logic [31:0] SIZE     [N] = '{default: 32'b0}
 ) (
     // APB master
-    apb3_intf m_apb,
+    apb3_intf.slave m_apb,
 
     // APB slaves
-    apb3_intf s_apb[N]
+    apb3_intf.master s_apb[N]
 );
 
   // ------------------------------------------------------------

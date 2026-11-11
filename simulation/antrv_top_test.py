@@ -8,16 +8,27 @@ from cocotb.types import LogicArray
 from colorama import Fore, Style
 from tb.antrv.AntrvEnv import AntrvEnv
 from tb.gpio.GpioSequence import GpioSequence
+from tb.uart.UartSequence import UartSequence
 from tb.utils.elf_utils import *
 from tb.utils.sail_utils import *
 from tb.utils.test_utils import *
 
-ELF_DIR = "riscv-arch-test/work/antrv/elfs/rv32i/I"
-_ELFS = [cocotb.Param(elf, name=elf.stem) for elf in Path(ELF_DIR).glob("*.elf")]
+ACT4_ELF_DIR = "riscv-arch-test/work/antrv/elfs/rv32i/I"
+_ACT4_ELFS = [
+    cocotb.Param(elf, name=elf.stem) for elf in Path(ACT4_ELF_DIR).glob("*.elf")
+]
+
+CODE_DIR = "../code/build"
+_GPIO_ELFS = [
+    cocotb.Param(elf, name=elf.stem) for elf in Path(CODE_DIR).glob("*gpio*.elf")
+]
+_UART_ELFS = [
+    cocotb.Param(elf, name=elf.stem) for elf in Path(CODE_DIR).glob("*uart*.elf")
+]
 
 
 @cocotb.test()
-@cocotb.parametrize(elf=_ELFS)
+@cocotb.parametrize(elf=_ACT4_ELFS)
 async def test_elf(dut, elf):
     avl.Factory.set_variable("*.hdl", dut)
     avl.Factory.set_variable("*.elf", elf)
@@ -67,17 +78,18 @@ async def test_elf(dut, elf):
 
 
 @cocotb.test()
-async def test_gpio(dut):
+@cocotb.parametrize(elf=_GPIO_ELFS)
+async def test_gpio(dut, elf):
     avl.Factory.set_variable("*.hdl", dut)
-    avl.Factory.set_variable("*.elf", "../code/build/gpio_test.elf")
+    avl.Factory.set_variable("*.elf", elf)
     # avl.Factory.set_variable("*.verbose", True)
-    avl.Factory.set_variable("*.disable_scoreboard", True)
+    avl.Factory.set_variable("*.disable_cpu_scoreboard", True)
 
     with no_logged_errors():
         env = AntrvEnv("env", None)
 
-        gpio_samples = avl.List()
-        env.gpio_agt.mon.item_export.connect(gpio_samples)
+        uart_samples = avl.List()
+        env.gpio_agt.mon.item_export.connect(uart_samples)
 
         async def stimulus():
             await env.ready.wait()
@@ -99,11 +111,37 @@ async def test_gpio(dut):
                 await seq.start()
 
                 expected = LogicArray(seq.data | (seq.data << 4), seq.gpio_num)
-                await gpio_samples.blocking_get()
-                actual = await gpio_samples.blocking_get()
+                await uart_samples.blocking_get()
+                actual = await uart_samples.blocking_get()
                 assert actual == expected, (
                     f"{Fore.RED}GPIO mirror mismatch: expected {expected}, last observed {actual}{Style.RESET_ALL}"
                 )
-                await gpio_samples.blocking_get()
+                await uart_samples.blocking_get()
+
+        await run_env(env, stimulus())
+
+
+@cocotb.test()
+@cocotb.parametrize(elf=_UART_ELFS)
+async def test_uart(dut, elf):
+    avl.Factory.set_variable("*.hdl", dut)
+    avl.Factory.set_variable("*.elf", elf)
+    # avl.Factory.set_variable("*.verbose", True)
+    avl.Factory.set_variable("*.disable_cpu_scoreboard", True)
+
+    with no_logged_errors():
+        env = AntrvEnv("env", None)
+
+        async def stimulus():
+            await env.ready.wait()
+
+            for i in range(randint(100, 200)):
+                await Timer(randint(0, 100_000), unit="ps")
+
+                cocotb.log.info(f"{Fore.BLUE}Iteration {i + 1}{Style.RESET_ALL}")
+
+                seq = UartSequence("seq", None)
+                seq.set_sequencer(env.uart_agt.sqr)
+                await seq.start()
 
         await run_env(env, stimulus())

@@ -1,61 +1,129 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="960" height="720" viewBox="0 0 960 720" role="img" aria-labelledby="title desc">
-  <title id="title">ANTRV CPU and SoC architecture</title>
-  <desc id="desc">Instruction ROM connects to a multi-cycle CPU containing a controller, register file, and bit-serial ALU. The data interface connects to RAM and an APB3 bridge. GPIO reads four Go Board switches on pins 3 through 0 and drives four LEDs on pins 7 through 4 in the GPIO demo.</desc>
+
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="940" viewBox="0 0 1140 940" role="img" aria-labelledby="title desc">
+  <title id="title">ANTRV Architecture</title>
+  <desc id="desc">ANTRV SoC architecture with a 32-bit multi-cycle CPU, instruction ROM, data RAM, an external CPU-to-APB3 bridge, and an encapsulated peripheral subsystem containing an APB3 decoder, GPIO, and UART.</desc>
+
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse">
-      <path d="M0 0L8 4L0 8Z" fill="#f0a66a"/>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto-start-reverse" markerUnits="userSpaceOnUse">
+      <path d="M0 0 L8 4 L0 8 Z" fill="#f0a66a"/>
     </marker>
+    <style>
+      .canvas { fill: #18181b; }
+      .soc-boundary { fill: none; stroke: #a1a1aa; stroke-width: 2.2; }
+      .block { fill: #303036; stroke: #f0a66a; stroke-width: 2.2; }
+      .cpu-shell { fill: #292524; stroke: #f0a66a; stroke-width: 2.2; }
+      .peripheral-shell { fill: #202024; stroke: #a1a1aa; stroke-width: 2; stroke-dasharray: 8 6; }
+      .cpu-inner { fill: #44403c; stroke: none; }
+      .wire { fill: none; stroke: #f0a66a; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+      .control-wire { fill: none; stroke: #f5c9a5; stroke-width: 2; stroke-dasharray: 5 5; }
+      .title { font: 700 29px 'DejaVu Sans', sans-serif; fill: #f4f4f5; }
+      .soc-label { font: 700 23px 'DejaVu Sans', sans-serif; fill: #f5c9a5; }
+      .heading { font: 700 23px 'DejaVu Sans', sans-serif; fill: #f4f4f5; }
+      .label { font: 20px 'DejaVu Sans', sans-serif; fill: #f4f4f5; }
+      .small { font: 15px 'DejaVu Sans', sans-serif; fill: #a1a1aa; }
+      .accent-small { font: 14px 'DejaVu Sans', sans-serif; fill: #f5c9a5; }
+      .io-label { font: 16px 'DejaVu Sans', sans-serif; fill: #f4f4f5; }
+      .bus-label { font: 14px 'DejaVu Sans', sans-serif; fill: #a1a1aa; }
+    </style>
   </defs>
-  <rect width="960" height="720" rx="20" fill="#18181b"/>
-  <path d="M690 640H30V60H915V640H890M710 640H870" fill="none" stroke="#a1a1aa" stroke-width="2"/>
-  <g font-family="DejaVu Sans, sans-serif" text-anchor="middle" fill="#f4f4f5">
-    <text x="480" y="43" font-size="26" font-weight="bold">ANTRV Architecture</text>
-    <text x="145" y="100" font-size="22" font-weight="bold" fill="#f5c9a5">ANTRV SoC</text>
-    <rect x="50" y="155" width="190" height="100" rx="12" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
-    <text x="145" y="195" font-size="20">Instruction ROM</text>
-    <text x="145" y="225" font-size="14" fill="#a1a1aa">Instruction fetch</text>
-    <rect x="340" y="75" width="550" height="235" rx="14" fill="#292524" stroke="#f0a66a" stroke-width="2"/>
-    <text x="615" y="112" font-size="22" font-weight="bold">32-bit Multi-cycle CPU</text>
-    <rect x="375" y="135" width="480" height="58" rx="8" fill="#44403c"/>
-    <text x="615" y="160" font-size="18">Multi-cycle controller</text>
-    <text x="615" y="181" font-size="13" fill="#f5c9a5">INSTR / PC / ALU / LATCH_RF</text>
-    <rect x="375" y="225" width="190" height="58" rx="8" fill="#44403c"/>
-    <text x="470" y="250" font-size="18">Register file</text>
-    <text x="470" y="272" font-size="13" fill="#f5c9a5">32 register addresses</text>
-    <rect x="665" y="225" width="190" height="58" rx="8" fill="#44403c"/>
-    <text x="760" y="250" font-size="18">Bit-serial ALU</text>
-    <text x="760" y="272" font-size="13" fill="#f5c9a5">Shared iterative datapath</text>
-    <g transform="translate(0 40)">
-    <rect x="350" y="375" width="185" height="75" rx="10" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
-    <text x="442" y="406" font-size="20">Data RAM</text>
-    <text x="442" y="433" font-size="14" fill="#a1a1aa">Loads / stores</text>
-    <rect x="690" y="375" width="200" height="75" rx="10" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
-    <text x="790" y="420" font-size="20">APB3 bridge</text>
-    <rect x="690" y="505" width="200" height="60" rx="10" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
-    <text x="790" y="542" font-size="20">GPIO module</text>
-    <rect x="625" y="620" width="150" height="45" rx="8" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
-    <text x="700" y="639" font-size="16">4 LEDs</text>
-    <text x="700" y="657" font-size="12" fill="#f5c9a5">GPIO [7:4] / outputs</text>
-    <rect x="805" y="620" width="150" height="45" rx="8" fill="#303036" stroke="#f0a66a" stroke-width="2"/>
-    <text x="880" y="639" font-size="16">4 switches</text>
-    <text x="880" y="657" font-size="12" fill="#f5c9a5">GPIO [3:0] / inputs</text>
-    </g>
-    <text x="530" y="352" font-size="17" fill="#a1a1aa">Data interface</text>
-    <text x="530" y="376" font-size="17" fill="#a1a1aa">+ address decode</text>
-  </g>
-  <g fill="none" stroke="#f0a66a" stroke-width="2.5" marker-end="url(#arrow)">
-    <path d="M240 205H340"/>
-    <path d="M565 254H665" marker-start="url(#arrow)"/>
-    <path d="M615 310V390H442V415" marker-start="url(#arrow)"/>
-    <path d="M615 390H790V415"/>
-    <g transform="translate(0 40)">
-    <path d="M790 450V505" marker-start="url(#arrow)"/>
-    <path d="M740 565V590H700V620"/>
-    <path d="M880 620V590H840V565"/>
-    </g>
-  </g>
-  <g fill="none" stroke="#f5c9a5" stroke-width="2" stroke-dasharray="5 4">
-    <path d="M470 193V225"/>
-    <path d="M760 193V225"/>
-  </g>
+
+  <rect class="canvas" width="1140" height="940" rx="22"/>
+
+  <!-- SoC boundary -->
+  <rect class="soc-boundary" x="48" y="88" width="1044" height="828" rx="19"/>
+  <text class="title" x="570" y="53" text-anchor="middle">ANTRV Architecture</text>
+  <text class="soc-label" x="82" y="132">ANTRV SoC</text>
+
+  <!-- Instruction ROM -->
+  <rect class="block" x="82" y="205" width="235" height="125" rx="13"/>
+  <text class="label" x="199.5" y="255" text-anchor="middle">Instruction ROM</text>
+  <text class="small" x="199.5" y="286" text-anchor="middle">Instruction fetch</text>
+
+  <!-- CPU -->
+  <rect class="cpu-shell" x="370" y="125" width="680" height="290" rx="16"/>
+  <text class="heading" x="710" y="166" text-anchor="middle">32-bit Multi-cycle CPU</text>
+
+  <rect class="cpu-inner" x="410" y="185" width="600" height="66" rx="9"/>
+  <text class="label" x="710" y="212" text-anchor="middle" font-size="19">Multi-cycle controller</text>
+  <text class="accent-small" x="710" y="235" text-anchor="middle">INSTR / PC / ALU / LATCH_RF</text>
+
+  <rect class="cpu-inner" x="410" y="280" width="240" height="85" rx="9"/>
+  <text class="label" x="530" y="315" text-anchor="middle">Register file</text>
+  <text class="accent-small" x="530" y="342" text-anchor="middle">32 registers</text>
+
+  <rect class="cpu-inner" x="770" y="280" width="240" height="85" rx="9"/>
+  <text class="label" x="890" y="315" text-anchor="middle">Bit-serial ALU</text>
+  <text class="accent-small" x="890" y="342" text-anchor="middle">Shared iterative datapath</text>
+
+  <!-- Data memory -->
+  <rect class="block" x="75" y="490" width="220" height="105" rx="11"/>
+  <text class="label" x="185" y="533" text-anchor="middle">Data RAM</text>
+  <text class="small" x="185" y="563" text-anchor="middle">Loads / stores</text>
+
+  <!-- CPU-to-APB bridge -->
+  <rect class="block" x="735" y="490" width="230" height="100" rx="11"/>
+  <text class="label" x="850" y="513" text-anchor="middle">APB3 Bridge</text>
+  <text class="small" x="850" y="558" text-anchor="middle">CPU-to-APB</text>
+
+  <!-- Encapsulated peripheral subsystem -->
+  <rect class="peripheral-shell" x="320" y="620" width="740" height="225" rx="16"/>
+  <text class="soc-label" x="350" y="645">Peripheral subsystem</text>
+
+  <!-- APB decoder -->
+  <rect class="cpu-shell" x="350" y="655" width="680" height="80" rx="12"/>
+  <text class="heading" x="690" y="688" text-anchor="middle">APB3 Decoder</text>
+  <text class="accent-small" x="690" y="715" text-anchor="middle">Address decoding / slave selection</text>
+
+  <!-- GPIO and UART slaves -->
+  <rect class="block" x="350" y="755" width="340" height="78" rx="11"/>
+  <text class="label" x="520" y="787" text-anchor="middle">GPIO Module</text>
+  <text class="small" x="520" y="815" text-anchor="middle">APB slave 0</text>
+
+  <rect class="block" x="710" y="755" width="320" height="78" rx="11"/>
+  <text class="label" x="870" y="787" text-anchor="middle">UART Module</text>
+  <text class="small" x="870" y="815" text-anchor="middle">APB slave 1</text>
+
+  <!-- External GPIO and UART connections -->
+  <rect class="block" x="350" y="865" width="170" height="43" rx="8"/>
+  <text class="io-label" x="435" y="892" text-anchor="middle">4 LEDs [7:4]</text>
+
+  <rect class="block" x="540" y="865" width="190" height="43" rx="8"/>
+  <text class="io-label" x="635" y="892" text-anchor="middle">4 Switches [3:0]</text>
+
+  <rect class="block" x="750" y="865" width="150" height="43" rx="8"/>
+  <text class="io-label" x="825" y="892" text-anchor="middle">UART RX</text>
+
+  <rect class="block" x="920" y="865" width="130" height="43" rx="8"/>
+  <text class="io-label" x="985" y="892" text-anchor="middle">UART TX</text>
+
+  <!-- Instruction fetch connection -->
+  <path class="wire" d="M317 267 H370" marker-end="url(#arrow)"/>
+
+  <!-- CPU internal datapath and control -->
+  <path class="wire" d="M650 322 H770" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  <path class="control-wire" d="M530 251 V280"/>
+  <path class="control-wire" d="M890 251 V280"/>
+
+  <!-- CPU data interface -->
+  <path class="wire" d="M710 415 V438 H185 V490" marker-end="url(#arrow)"/>
+  <path class="wire" d="M710 438 H850 V490" marker-end="url(#arrow)"/>
+  <text class="bus-label" x="520" y="430" text-anchor="middle">Data interface / address selection</text>
+
+  <!-- Bridge-to-decoder APB connection -->
+  <path class="wire" d="M850 590 V655" marker-end="url(#arrow)"/>
+  <text class="bus-label" x="878" y="640" text-anchor="start">APB3 bus</text>
+
+  <!-- Decoder outputs -->
+  <path class="wire" d="M510 735 V745 H520 V755" marker-end="url(#arrow)"/>
+  <path class="wire" d="M870 735 V755" marker-end="url(#arrow)"/>
+  <text class="bus-label" x="492" y="750" text-anchor="middle">APB3</text>
+  <text class="bus-label" x="890" y="750" text-anchor="middle">APB3</text>
+
+  <!-- GPIO connections -->
+  <path class="wire" d="M470 833 V845 H435 V865" marker-end="url(#arrow)"/>
+  <path class="wire" d="M635 865 V845 H570 V833" marker-end="url(#arrow)"/>
+
+  <!-- UART connections -->
+  <path class="wire" d="M825 865 V833" marker-end="url(#arrow)"/>
+  <path class="wire" d="M985 833 V865" marker-end="url(#arrow)"/>
 </svg>

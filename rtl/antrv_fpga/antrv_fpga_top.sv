@@ -54,7 +54,9 @@ module antrv_fpga_top (
       .rst_n_i(1'b1),
       .gpio_pins_io({
         o_LED_4, o_LED_3, o_LED_2, o_LED_1, i_Switch_4, i_Switch_3, i_Switch_2, i_Switch_1
-      })
+      }),
+      .uart_rx_i(i_UART_RX),
+      .uart_tx_o(o_UART_TX)
   );
 
 endmodule
