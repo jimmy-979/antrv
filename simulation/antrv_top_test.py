@@ -105,17 +105,11 @@ async def test_gpio(dut, elf):
                 # here, so the external driver has released pins [3:0].
                 expected_output = input_value << 4
                 actual_output = int(env.cfg.interface.gpios.value) & 0xF0
-                if actual_output != expected_output:
-                    assert actual_output == expected_output, (
-                        f"{Fore.RED}GPIO mirror mismatch: drove {input_value:04b}; "
-                        f"expected output {expected_output >> 4:04b}, got "
-                        f"{actual_output >> 4:04b}{Style.RESET_ALL}"
-                    )
-                else:
-                    cocotb.log.info(
-                        f"{Fore.GREEN}GPIO mirror match: drove {input_value:04b}; "
-                        f"got {actual_output >> 4:04b}{Style.RESET_ALL}"
-                    )
+                assert actual_output == expected_output, (
+                    f"{Fore.RED}GPIO mirror mismatch: drove {input_value:04b}; "
+                    f"expected output {expected_output >> 4:04b}, got "
+                    f"{actual_output >> 4:04b}{Style.RESET_ALL}"
+                )
 
         await run_env(env, stimulus())
 
