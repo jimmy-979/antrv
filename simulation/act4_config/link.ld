@@ -1,18 +1,8 @@
-/* ============================================================
- * DUT memory map
- *
- * ROM: execute-only
- *   0x80000000 - 0x800007FF  (256 KiB)
- *
- * RAM: read/write
- *   0x80000800 - 0x80000FFF  (128 KiB)
- * ============================================================ */
-
 ROM_ORIGIN = 0x80000000;
-ROM_LENGTH = 0x40000;      /* 256 KiB */
+ROM_LENGTH = 0x100000;
 
-RAM_ORIGIN = 0x80040000;
-RAM_LENGTH = 0x20000;      /* 128 KiB */
+RAM_ORIGIN = 0x80100000;
+RAM_LENGTH = 0x80000;
 
 TEST_BASE = ROM_ORIGIN;
 

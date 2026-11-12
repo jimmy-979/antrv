@@ -8,7 +8,7 @@ typedef struct
     uint32_t direction;
 } gpio_regs_t;
 
-#define GPIO_BASE 0x80060000
+#define GPIO_BASE 0x80180000
 #define GPIO ((volatile gpio_regs_t *)GPIO_BASE)
 
 void main(void)

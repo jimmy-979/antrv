@@ -1,7 +1,7 @@
 #include <stdint.h>
 #include "uart.h"
 
-#define UART_BASE 0x8006000C
+#define UART_BASE 0x8018000C
 #define UART ((volatile uart_reg_file_t *)UART_BASE)
 
 int main(void)

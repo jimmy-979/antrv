@@ -7,10 +7,10 @@
 `endif
 
 module antrv_top #(
-    parameter int           ROM_ADDR_WIDTH   = $clog2(32'h40000),
-    parameter int           RAM_ADDR_WIDTH   = $clog2(32'h20000),
+    parameter int           ROM_ADDR_WIDTH   = $clog2(32'h100000 / 4),
+    parameter int           RAM_ADDR_WIDTH   = $clog2(32'h80000 / 4),
     // Peripheral address map
-    parameter logic  [31:0] PERIPH_BASE_ADDR = 32'h80060000,
+    parameter logic  [31:0] PERIPH_BASE_ADDR = 32'h80180000,
     // Peripheral configuration
     parameter int           GPIO_WIDTH       = gpio_reg_file_pkg::GPIO_WIDTH,
     parameter int           BAUD_RATE        = 115200,

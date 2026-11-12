@@ -1,4 +1,4 @@
-    .equ GPIO_BASE,      0x80060000
+    .equ GPIO_BASE,      0x80180000
     .equ GPIO_DATA_IN,   0x00
     .equ GPIO_DATA_OUT,  0x04
     .equ GPIO_DIRECTION, 0x08

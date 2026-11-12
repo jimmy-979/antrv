@@ -31,12 +31,12 @@ class AntrvEnvCfg(avl.Object):
         self.memory_map = {
             "rom": {
                 "base": 0x80000000,
-                "size": 0x40000,
+                "size": 0x100000,
                 "permissions": "x",
             },
             "ram": {
-                "base": 0x80040000,
-                "size": 0x20000,
+                "base": 0x80100000,
+                "size": 0x80000,
                 "permissions": "rw",
             },
         }

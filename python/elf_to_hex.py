@@ -5,10 +5,9 @@ from pathlib import Path
 from elftools.common.exceptions import ELFError
 from elftools.elf.elffile import ELFFile
 
-
 MEMORY_MAP = {
-    "rom": (0x80000000, 0x40000),
-    "ram": (0x80040000, 0x20000),
+    "rom": (0x80000000, 0x100000),
+    "ram": (0x80100000, 0x80000),
 }
 
 
@@ -71,7 +70,9 @@ def write_hex(path: Path, data: bytearray) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Convert ELF to ROM/RAM readmemh files")
+    parser = argparse.ArgumentParser(
+        description="Convert ELF to ROM/RAM readmemh files"
+    )
     parser.add_argument("elf", type=Path)
     parser.add_argument("--rom", type=Path, required=True)
     parser.add_argument("--ram", type=Path, required=True)
