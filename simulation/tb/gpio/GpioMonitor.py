@@ -1,6 +1,7 @@
 import avl
 from cocotb.triggers import ValueChange
 from colorama import Fore, Style
+from tb.gpio.GpioSeqItem import GpioSeqItem
 
 
 class GpioMonitor(avl.Monitor):
@@ -19,5 +20,10 @@ class GpioMonitor(avl.Monitor):
                 self.info(
                     f"{Fore.BLUE}GPIO value changed from {previous} to {current}{Style.RESET_ALL}"
                 )
-                self.item_export.write(current)
+
+                item = GpioSeqItem("item", self)
+                item.n_gpios = self.cfg.n_gpios
+                item.data = current
+                self.item_export.write(item)
+
             previous = current

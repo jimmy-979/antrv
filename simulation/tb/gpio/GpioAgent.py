@@ -13,9 +13,10 @@ class GpioAgent(avl.Agent):
 
         self.mon = GpioMonitor("mon", self)
         self.drv = GpioDriver("drv", self)
-        self.seq = GpioSequencer("seq", self)
+        self.sqr = GpioSequencer("seq", self)
 
         self.mon.cfg = self.cfg
         self.drv.cfg = self.cfg
+        self.sqr.cfg = self.cfg
 
-        self.seq.seq_item_export.connect(self.drv.seq_item_port)
+        self.sqr.seq_item_export.connect(self.drv.seq_item_port)

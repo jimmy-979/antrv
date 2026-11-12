@@ -43,6 +43,8 @@ class AntrvEnv(avl.Env):
         self.elf_loader.rom = self.cfg.interface.rom
         self.elf_loader.ram = self.cfg.interface.ram
 
+        self.gpio_agt.cfg.n_gpios = self.cfg.n_gpios
+
         self.uart_agt.cfg.data_width = self.cfg.data_width
         self.uart_agt.cfg.parity = self.cfg.parity
         self.uart_agt.cfg.stop_bits = self.cfg.stop_bits

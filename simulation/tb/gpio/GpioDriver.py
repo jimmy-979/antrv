@@ -1,5 +1,6 @@
 import avl
 from cocotb.triggers import Timer
+from colorama import Fore, Style
 
 
 class GpioDriver(avl.Driver):
@@ -18,10 +19,14 @@ class GpioDriver(avl.Driver):
             item = await self.seq_item_port.blocking_get()
             mask = item.mask & all_pins
 
-            self.cfg.interface.gpio_drive_data.value = item.data & mask
+            self.info(
+                f"{Fore.BLUE}Driving GPIO with data {(int(item.data) & mask):04b} for {item.duration_us} us{Style.RESET_ALL}"
+            )
+
+            self.cfg.interface.gpio_drive_data.value = int(item.data) & mask
             self.cfg.interface.gpio_drive_enable.value = mask
 
-            await Timer(item.duration_ns, unit="ns")
+            await Timer(item.duration_us, unit="us")
 
             self.cfg.interface.gpio_drive_enable.value = 0
 

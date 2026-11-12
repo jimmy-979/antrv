@@ -15,6 +15,9 @@ class AntrvEnvCfg(avl.Object):
         # ----------------------- Timeout time in ms ------------------------ #
         self.timeout_ms = 50
 
+        # ------------------ GPIO configuration parameters ------------------ #
+        self.n_gpios = 8
+
         # ------------------ UART configuration parameters ------------------ #
         self.data_width = 8
         self.parity = None

@@ -4,7 +4,6 @@ from random import randint
 import avl
 import cocotb
 from cocotb.triggers import RisingEdge, Timer
-from cocotb.types import LogicArray
 from colorama import Fore, Style
 from tb.antrv.AntrvEnv import AntrvEnv
 from tb.gpio.GpioSequence import GpioSequence
@@ -82,41 +81,41 @@ async def test_elf(dut, elf):
 async def test_gpio(dut, elf):
     avl.Factory.set_variable("*.hdl", dut)
     avl.Factory.set_variable("*.elf", elf)
-    # avl.Factory.set_variable("*.verbose", True)
     avl.Factory.set_variable("*.disable_cpu_scoreboard", True)
 
     with no_logged_errors():
         env = AntrvEnv("env", None)
 
-        uart_samples = avl.List()
-        env.gpio_agt.mon.item_export.connect(uart_samples)
-
         async def stimulus():
             await env.ready.wait()
 
-            for i in range(randint(2, 5)):
+            for i in range(randint(50, 100)):
                 await Timer(randint(1_000, 100_000), unit="ps")
 
-                cocotb.log.info("")
                 cocotb.log.info(f"{Fore.BLUE}Iteration {i + 1}{Style.RESET_ALL}")
 
                 seq = GpioSequence("seq", None)
-                seq.gpio_num = len(env.cfg.interface.gpios)
-                seq.num_items = 1
-                seq.data = randint(0, 0xF)
-                seq.mask = 0xF
-                seq.duration_ns = 2e6
-
-                seq.set_sequencer(env.gpio_agt.seq)
+                input_value = randint(0, 0xF)
+                seq.data = input_value
+                seq.set_sequencer(env.gpio_agt.sqr)
                 await seq.start()
 
-                expected = LogicArray(seq.data | (seq.data << 4), seq.gpio_num)
-                await uart_samples.blocking_get()
-                actual = await uart_samples.blocking_get()
-                assert actual == expected, (
-                    f"{Fore.RED}GPIO mirror mismatch: expected {expected}, last observed {actual}{Style.RESET_ALL}"
-                )
-                await uart_samples.blocking_get()
+                # gpio_c_test.c configures pins [3:0] as inputs and mirrors
+                # their value onto pins [7:4].  The sequence has completed
+                # here, so the external driver has released pins [3:0].
+                expected_output = input_value << 4
+                actual_output = int(env.cfg.interface.gpios.value) & 0xF0
+                if actual_output != expected_output:
+                    assert actual_output == expected_output, (
+                        f"{Fore.RED}GPIO mirror mismatch: drove {input_value:04b}; "
+                        f"expected output {expected_output >> 4:04b}, got "
+                        f"{actual_output >> 4:04b}{Style.RESET_ALL}"
+                    )
+                else:
+                    cocotb.log.info(
+                        f"{Fore.GREEN}GPIO mirror match: drove {input_value:04b}; "
+                        f"got {actual_output >> 4:04b}{Style.RESET_ALL}"
+                    )
 
         await run_env(env, stimulus())
 
@@ -126,7 +125,6 @@ async def test_gpio(dut, elf):
 async def test_uart(dut, elf):
     avl.Factory.set_variable("*.hdl", dut)
     avl.Factory.set_variable("*.elf", elf)
-    # avl.Factory.set_variable("*.verbose", True)
     avl.Factory.set_variable("*.disable_cpu_scoreboard", True)
 
     with no_logged_errors():
