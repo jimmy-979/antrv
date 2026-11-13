@@ -3,7 +3,7 @@ RED   := \033[31m
 RESET := \033[0m
 
 INFO  = @printf '$(BLUE)[$(notdir $(CALLER_DIR))]$(RESET) %s\n' "$(1)"
-ERROR = @printf '$(RED)[$(notdir $(CALLER_DIR))]$(RESET) %s\n' "$(1)" >&2
+ERROR = printf '$(RED)[$(notdir $(CALLER_DIR))]$(RESET) %s\n' "$(1)" >&2
 
 # Shared targets for Makefiles run from synthesis/ or simulation/.
 # HAL builds generate only the register block and Verilator configuration.

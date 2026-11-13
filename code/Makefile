@@ -8,7 +8,7 @@ ASM_INCLUDE_DIR :=
 STARTUP := startup.S
 
 CFLAGS := -march=rv32i -mabi=ilp32 -nostdlib
-DHRY_CFLAGS := -std=gnu89 -Wno-old-style-definition
+DHRY_CFLAGS := -O3
 ASFLAGS := $(CFLAGS)
 
 C_SOURCES := $(wildcard tests/*.c)
