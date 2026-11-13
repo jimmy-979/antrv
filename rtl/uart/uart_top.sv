@@ -14,6 +14,15 @@ module uart_top #(
 
   logic                                   unused_tx_ready;
   logic                                   unused_tx_done;
+  logic                                   tx_valid_q;
+
+  always_ff @(posedge clk_i or negedge rst_n_i) begin
+    if (!rst_n_i) begin
+      tx_valid_q <= 1'b0;
+    end else begin
+      tx_valid_q <= hwif_out.tx_data.data.swmod;
+    end
+  end
 
   uart_rx #(
       .BAUD_RATE (BAUD_RATE),
@@ -32,7 +41,7 @@ module uart_top #(
   ) inst_tx (
       .clk_i      (clk_i),
       .rst_n_i    (rst_n_i),
-      .tx_valid_i (hwif_out.tx_data.data.swmod),
+      .tx_valid_i (tx_valid_q),
       .tx_byte_i  (hwif_out.tx_data.data.value),
       .tx_ready_o (unused_tx_ready),
       .tx_active_o(hwif_in.status.tx_busy.next),

@@ -3,11 +3,12 @@ from random import randint
 
 import avl
 import cocotb
+from avl import List
 from cocotb.triggers import RisingEdge, Timer
 from colorama import Fore, Style
 from tb.antrv.AntrvEnv import AntrvEnv
 from tb.gpio.GpioSequence import GpioSequence
-from tb.uart.UartSequence import UartSequence
+from tb.uart.UartSequence import UartTxByteSequence, UartTxWordSequence
 from tb.utils.elf_utils import *
 from tb.utils.sail_utils import *
 from tb.utils.test_utils import *
@@ -23,6 +24,9 @@ _GPIO_ELFS = [
 ]
 _UART_ELFS = [
     cocotb.Param(elf, name=elf.stem) for elf in Path(CODE_DIR).glob("*uart*.elf")
+]
+_HELLO_WORLD_ELFS = [
+    cocotb.Param(elf, name=elf.stem) for elf in Path(CODE_DIR).glob("*hello_world*.elf")
 ]
 
 
@@ -120,6 +124,7 @@ async def test_uart(dut, elf):
     avl.Factory.set_variable("*.hdl", dut)
     avl.Factory.set_variable("*.elf", elf)
     avl.Factory.set_variable("*.disable_cpu_scoreboard", True)
+    avl.Factory.set_variable("*.uart_verbose", True)
 
     with no_logged_errors():
         env = AntrvEnv("env", None)
@@ -132,8 +137,42 @@ async def test_uart(dut, elf):
 
                 cocotb.log.info(f"{Fore.BLUE}Iteration {i + 1}{Style.RESET_ALL}")
 
-                seq = UartSequence("seq", None)
+                seq = UartTxByteSequence("seq", None)
                 seq.set_sequencer(env.uart_agt.sqr)
                 await seq.start()
+
+        await run_env(env, stimulus())
+
+
+@cocotb.test()
+@cocotb.parametrize(elf=_HELLO_WORLD_ELFS)
+async def test_hello_world(dut, elf):
+    avl.Factory.set_variable("*.hdl", dut)
+    avl.Factory.set_variable("*.elf", elf)
+    avl.Factory.set_variable("*.disable_cpu_scoreboard", True)
+
+    with no_logged_errors():
+        env = AntrvEnv("env", None)
+
+        tx_item_port = List()
+        env.uart_agt.mon.tx_item_export.connect(tx_item_port)
+
+        async def stimulus():
+            await env.ready.wait()
+
+            expected_msg = b"Hello, world!\n"
+            actual_msg = b""
+            while len(actual_msg) < len(expected_msg):
+                item = await tx_item_port.blocking_get()
+                actual_msg += bytes([item.data])
+
+            assert actual_msg == expected_msg, (
+                f"{Fore.RED}UART message mismatch: expected {expected_msg!r}, "
+                f"got {actual_msg!r}{Style.RESET_ALL}"
+            )
+
+            seq = UartTxWordSequence("seq", None, b"Goodbye, world!\n")
+            seq.set_sequencer(env.uart_agt.sqr)
+            await seq.start()
 
         await run_env(env, stimulus())
